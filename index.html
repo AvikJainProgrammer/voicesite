@@ -114,16 +114,30 @@
     <div class="row">
       <button id="recRef" disabled>Record the mantra once</button>
     </div>
-    <div class="note">Say the mantra one time at your normal chanting pace, then tap Stop. The app stores how it sounds. Tap a sound below to remove it if it looks wrong.</div>
-    <div class="chips ipa" id="refChips"></div>
+    <div class="note">Say the mantra one time at your normal chanting pace, then tap Stop. Record in a quiet spot, close to the phone, and chant the same way you will later.</div>
     <div class="note" id="refInfo">No mantra recorded yet.</div>
-    <label class="cap" for="refText">Phonemes (editable, separated by spaces)</label>
-    <input type="text" class="ipa" id="refText" placeholder="Filled in after you record" autocomplete="off" spellcheck="false">
+    <div id="phRef" hidden>
+      <div class="chips ipa" id="refChips"></div>
+      <label class="cap" for="refText">Phonemes (editable, separated by spaces)</label>
+      <input type="text" class="ipa" id="refText" placeholder="Filled in after you record" autocomplete="off" spellcheck="false">
+    </div>
   </section>
 
   <section aria-labelledby="sh">
     <span class="cap" id="sh">Settings</span>
     <div>
+      <label for="engine">Counting method</label>
+      <select id="engine">
+        <option value="acoustic">Fast sound match (no download, instant)</option>
+        <option value="phoneme">Phoneme model (slow, big download)</option>
+      </select>
+    </div>
+    <div id="acBox">
+      <label for="tol">Match tolerance: <span class="val" id="tolVal">0.95</span></label>
+      <input type="range" id="tol" min="0.40" max="1.40" step="0.01" value="0.95">
+      <div class="note">While chanting, watch the "closest match" number under the counter. Set the tolerance just above the numbers you see on real repetitions. Higher counts more, lower counts less.</div>
+    </div>
+    <div id="phBox" hidden>
       <label for="thr">Match strictness: <span class="val" id="thrVal">65%</span></label>
       <input type="range" id="thr" min="40" max="95" step="1" value="65">
       <div class="note">Lower it if repetitions are missed. Raise it if other speech gets counted.</div>
@@ -142,8 +156,8 @@
     <label class="switch"><input type="checkbox" id="vib" checked> Vibrate on each count</label>
   </section>
 
-  <section aria-labelledby="lh">
-    <span class="cap" id="lh">Speech model</span>
+  <section aria-labelledby="lh" id="modelBox" hidden>
+    <span class="cap" id="lh">Speech model (phoneme method only)</span>
     <select id="model" aria-label="Model">
       <option value="int8">wav2vec2 phoneme, INT8 (recommended)</option>
       <option value="fp16">wav2vec2 phoneme, FP16 (experimental)</option>
@@ -182,6 +196,7 @@
   var el = {};
   ["counterBox","dial","bar","count","bead","state","level","start","minus","plus","reset","status","heard",
    "mname","recRef","refChips","refInfo","refText","thr","thrVal","target","snd","vib",
+   "engine","acBox","phBox","tol","tolVal","modelBox","phRef",
    "model","load","prog","mstatus"].forEach(function (k) { el[k] = $(k); });
 
   /* ---------- persistence (best effort) ---------- */
@@ -195,6 +210,9 @@
     ref: recall("ref", []),
     refDur: recall("refDur", 0),
     name: recall("name", ""),
+    engine: recall("engine", "acoustic"),
+    tol: recall("tol", 0.95),
+    ac: recall("ac", null),
     snd: recall("snd", true),
     vib: recall("vib", true)
   };
@@ -257,6 +275,20 @@
   el.thr.addEventListener("input", function () {
     S.thr = parseInt(el.thr.value, 10); el.thrVal.textContent = S.thr + "%"; store("thr", S.thr);
   });
+  el.tol.value = S.tol; el.tolVal.textContent = Number(S.tol).toFixed(2);
+  el.tol.addEventListener("input", function () {
+    S.tol = parseFloat(el.tol.value); el.tolVal.textContent = S.tol.toFixed(2); store("tol", S.tol);
+  });
+  el.engine.value = S.engine;
+  function applyEngine() {
+    el.acBox.hidden = S.engine !== "acoustic";
+    el.phBox.hidden = S.engine !== "phoneme";
+    el.modelBox.hidden = S.engine !== "phoneme";
+    el.phRef.hidden = S.engine !== "phoneme";
+    updateReady();
+    if (S.engine === "phoneme" && !session) autoLoadIfCached();
+  }
+  el.engine.addEventListener("change", function () { S.engine = el.engine.value; store("engine", S.engine); applyEngine(); });
   el.target.value = String(S.target);
   el.target.addEventListener("change", function () { S.target = parseInt(el.target.value, 10); store("target", S.target); renderCount(); });
   el.snd.checked = S.snd; el.vib.checked = S.vib;
@@ -279,9 +311,10 @@
       el.refChips.appendChild(b);
     });
     el.refText.value = S.ref.join(" ");
-    el.refInfo.textContent = S.ref.length
-      ? S.ref.length + " sounds, about " + S.refDur.toFixed(1) + " s per repetition."
-      : "No mantra recorded yet.";
+    var bits = [];
+    if (S.ac) bits.push("sound pattern saved (" + S.ac.dur.toFixed(1) + " s per repetition)");
+    if (S.ref.length) bits.push(S.ref.length + " phonemes saved");
+    el.refInfo.textContent = bits.length ? "Saved: " + bits.join(", ") + "." : "No mantra recorded yet.";
     updateReady();
   }
   function saveRef() { store("ref", S.ref); store("refDur", S.refDur); renderRef(); }
@@ -291,12 +324,16 @@
     saveRef();
   });
 
+  function engineReady() {
+    return S.engine === "acoustic" ? !!S.ac : (!!session && S.ref.length >= 3);
+  }
   function updateReady() {
-    var ready = !!session && S.ref.length >= 3;
-    el.start.disabled = !ready && !listening;
-    el.recRef.disabled = !session || listening;
-    if (!listening) {
-      if (!session) setStatus("Load the speech model below to begin.");
+    el.start.disabled = !engineReady() && !listening;
+    el.recRef.disabled = listening || refRecording;
+    if (!listening && !refRecording) {
+      if (S.engine === "acoustic") {
+        setStatus(S.ac ? "Ready. Tap Start listening and begin chanting." : "Record your mantra once below, then start listening.");
+      } else if (!session) setStatus("Load the speech model below to begin.");
       else if (S.ref.length < 3) setStatus("Record your mantra once below, then start listening.");
       else setStatus("Ready. Tap Start listening and begin chanting.");
     }
@@ -519,11 +556,196 @@
     return keep;
   }
 
+
+  /* ---------- fast acoustic matching (log-mel cepstra + subsequence DTW) ---------- */
+  var FFT_N = 512, WIN = 400, HOP = 320, NMEL = 26, NCEP = 13, DIMS = 12;
+  var hamming = new Float32Array(WIN), melFB = [], dct = [], bitrev = new Uint16Array(FFT_N);
+  var twRe = new Float32Array(FFT_N / 2), twIm = new Float32Array(FFT_N / 2);
+  (function initDsp() {
+    var i, j, k;
+    for (i = 0; i < WIN; i++) hamming[i] = 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (WIN - 1));
+    var bits = Math.log2(FFT_N);
+    for (i = 0; i < FFT_N; i++) { var r = 0; for (j = 0; j < bits; j++) if (i & (1 << j)) r |= 1 << (bits - 1 - j); bitrev[i] = r; }
+    for (i = 0; i < FFT_N / 2; i++) { twRe[i] = Math.cos(-2 * Math.PI * i / FFT_N); twIm[i] = Math.sin(-2 * Math.PI * i / FFT_N); }
+    function mel(f) { return 2595 * Math.log10(1 + f / 700); }
+    function imel(m) { return 700 * (Math.pow(10, m / 2595) - 1); }
+    var lo = mel(100), hi = mel(7000), pts = [];
+    for (i = 0; i < NMEL + 2; i++) pts.push(Math.floor((FFT_N + 1) * imel(lo + (hi - lo) * i / (NMEL + 1)) / SR));
+    for (i = 0; i < NMEL; i++) {
+      var f = new Float32Array(FFT_N / 2 + 1);
+      for (k = pts[i]; k < pts[i + 1]; k++) f[k] = (k - pts[i]) / Math.max(1, pts[i + 1] - pts[i]);
+      for (k = pts[i + 1]; k < pts[i + 2]; k++) f[k] = (pts[i + 2] - k) / Math.max(1, pts[i + 2] - pts[i + 1]);
+      melFB.push(f);
+    }
+    for (i = 0; i < NCEP; i++) {
+      var row = new Float32Array(NMEL);
+      for (j = 0; j < NMEL; j++) row[j] = Math.cos(Math.PI * i * (j + 0.5) / NMEL);
+      dct.push(row);
+    }
+  })();
+
+  var fRe = new Float32Array(FFT_N), fIm = new Float32Array(FFT_N), frameBuf = new Float32Array(WIN), melE = new Float32Array(NMEL);
+  /* frameBuf holds 400 samples; returns Float32Array(13): [logEnergy, c1..c12] */
+  function frameFeature() {
+    var i, k;
+    fRe.fill(0); fIm.fill(0);
+    for (i = 0; i < WIN; i++) {
+      var x = frameBuf[i] - (i ? 0.97 * frameBuf[i - 1] : 0);
+      fRe[bitrev[i]] = x * hamming[i];
+    }
+    for (var size = 2; size <= FFT_N; size <<= 1) {
+      var half = size >> 1, step = FFT_N / size;
+      for (var st = 0; st < FFT_N; st += size) {
+        for (k = 0; k < half; k++) {
+          var wr = twRe[k * step], wi = twIm[k * step];
+          var a = st + k, b = a + half;
+          var tr = fRe[b] * wr - fIm[b] * wi, ti = fRe[b] * wi + fIm[b] * wr;
+          fRe[b] = fRe[a] - tr; fIm[b] = fIm[a] - ti;
+          fRe[a] += tr; fIm[a] += ti;
+        }
+      }
+    }
+    var nb = FFT_N / 2 + 1, pw = new Float32Array(nb);
+    for (k = 0; k < nb; k++) pw[k] = fRe[k] * fRe[k] + fIm[k] * fIm[k];
+    var tot = 0;
+    for (i = 0; i < NMEL; i++) {
+      var e = 0, fb = melFB[i];
+      for (k = 0; k < nb; k++) if (fb[k]) e += fb[k] * pw[k];
+      melE[i] = Math.log(Math.max(e, 1e-8)); tot += e;
+    }
+    var out = new Float32Array(NCEP);
+    out[0] = Math.log(Math.max(tot, 1e-8));
+    for (i = 1; i < NCEP; i++) { var s2 = 0, row = dct[i]; for (var j = 0; j < NMEL; j++) s2 += row[j] * melE[j]; out[i] = s2; }
+    return out;
+  }
+  function pool(a, b) { var o = new Float32Array(NCEP); for (var i = 0; i < NCEP; i++) o[i] = (a[i] + b[i]) / 2; return o; }
+
+  /* live feature stream, 40 ms per pooled frame */
+  var featNext = 0, pooled = [], pooledBase = 0, pendingFrame = null;
+  function resetFeatureStream() { featNext = Math.floor(total / HOP); pooled = []; pooledBase = Math.floor(featNext / 2); pendingFrame = null; }
+  function pumpFeatures() {
+    while ((featNext + 1) * HOP + (WIN - HOP) <= total && featNext * HOP >= total - RB + WIN) {
+      var start = featNext * HOP;
+      for (var i = 0; i < WIN; i++) frameBuf[i] = ring[(start + i) % RB];
+      var f = frameFeature();
+      if (featNext % 2 === 0) pendingFrame = f;
+      else if (pendingFrame) { pooled.push(pool(pendingFrame, f)); pendingFrame = null; }
+      featNext++;
+    }
+    if (pooled.length > 1500) { pooled.splice(0, 500); pooledBase += 500; }
+  }
+  function featuresFromWav(wav) {
+    var out = [], prev = null, nf = Math.floor((wav.length - WIN) / HOP) + 1;
+    for (var k = 0; k < nf; k++) {
+      for (var i = 0; i < WIN; i++) frameBuf[i] = wav[k * HOP + i];
+      var f = frameFeature();
+      if (k % 2 === 0) prev = f; else out.push(pool(prev, f));
+    }
+    return out;
+  }
+  function buildAcousticRef(wav) {
+    var fr = featuresFromWav(wav);
+    if (fr.length < 15) return null;
+    var mn = Infinity, mx = -Infinity, i, d;
+    fr.forEach(function (f) { if (f[0] < mn) mn = f[0]; if (f[0] > mx) mx = f[0]; });
+    var thr = mn + 0.35 * (mx - mn), a = 0, b = fr.length - 1;
+    while (a < fr.length && fr[a][0] < thr) a++;
+    while (b > a && fr[b][0] < thr) b--;
+    a = Math.max(0, a - 1); b = Math.min(fr.length - 1, b + 1);
+    var seg = fr.slice(a, b + 1);
+    if (seg.length < 10) return null;
+    var mean = new Array(DIMS).fill(0), sd = new Array(DIMS).fill(0);
+    seg.forEach(function (f) { for (d = 0; d < DIMS; d++) mean[d] += f[d + 1]; });
+    for (d = 0; d < DIMS; d++) mean[d] /= seg.length;
+    seg.forEach(function (f) { for (d = 0; d < DIMS; d++) { var x = f[d + 1] - mean[d]; sd[d] += x * x; } });
+    for (d = 0; d < DIMS; d++) sd[d] = Math.sqrt(sd[d] / seg.length) + 1e-3;
+    var norm = seg.map(function (f) { var r = []; for (var d2 = 0; d2 < DIMS; d2++) r.push(Math.round(((f[d2 + 1] - mean[d2]) / sd[d2]) * 1000) / 1000); return r; });
+    return { f: norm, mean: mean, sd: sd, dur: seg.length * 0.04 };
+  }
+
+  /* open-begin, open-end DTW of the reference against a stretch of live frames */
+  function subseqDTW(R, X, pen) {
+    var m = R.length, n = X.length, j, i, d;
+    var Dp = new Float32Array(n), Lp = new Float32Array(n), Sp = new Int32Array(n);
+    var Dc = new Float32Array(n), Lc = new Float32Array(n), Sc = new Int32Array(n);
+    function dist(r, x) { var s2 = 0; for (var q = 0; q < DIMS; q++) { var t = r[q] - x[q]; s2 += t * t; } return Math.sqrt(s2 / DIMS); }
+    for (j = 0; j < n; j++) { Dp[j] = dist(R[0], X[j]); Lp[j] = 1; Sp[j] = j; }
+    for (i = 1; i < m; i++) {
+      for (j = 0; j < n; j++) {
+        d = dist(R[i], X[j]);
+        var bd = Dp[j] + d + pen, bl = Lp[j] + 1, bs = Sp[j];
+        if (j > 0) {
+          var dg = Dp[j - 1] + d;
+          if (dg < bd) { bd = dg; bl = Lp[j - 1] + 1; bs = Sp[j - 1]; }
+          var hz = Dc[j - 1] + d + pen;
+          if (hz < bd) { bd = hz; bl = Lc[j - 1] + 1; bs = Sc[j - 1]; }
+        }
+        Dc[j] = bd; Lc[j] = bl; Sc[j] = bs;
+      }
+      var t1 = Dp; Dp = Dc; Dc = t1; t1 = Lp; Lp = Lc; Lc = t1; var t2 = Sp; Sp = Sc; Sc = t2;
+    }
+    var cost = new Float32Array(n), start = new Int32Array(n);
+    for (j = 0; j < n; j++) { cost[j] = Dp[j] / Lp[j]; start[j] = Sp[j]; }
+    return { cost: cost, start: start };
+  }
+
+  var acLastPrint = 0;
+  function acousticStep() {
+    pumpFeatures();
+    var R = S.ac.f, m = R.length;
+    var absEnd = pooledBase + pooled.length;
+    var winFrames = Math.min(pooled.length, Math.round(m * 2.6) + 20);
+    if (winFrames < m + 5) return;
+    var winStartIdx = pooled.length - winFrames, X = new Array(winFrames), i, d;
+    var mean = S.ac.mean, sd = S.ac.sd;
+    for (i = 0; i < winFrames; i++) {
+      var f = pooled[winStartIdx + i], r = new Array(DIMS);
+      for (d = 0; d < DIMS; d++) r[d] = (f[d + 1] - mean[d]) / sd[d];
+      X[i] = r;
+    }
+    var rawN = Math.min(total, Math.round(winFrames * 0.04 * SR)), ssum = 0, base = total - rawN;
+    for (i = 0; i < rawN; i += 8) { var v = ring[(base + i) % RB]; ssum += v * v; }
+    var rms = Math.sqrt(ssum / Math.max(1, rawN / 8));
+    if (rms < SILENCE_RMS) { el.heard.textContent = "(quiet)"; return; }
+
+    var res = subseqDTW(R, X, 0.12), cost = res.cost, start = res.start, n = cost.length;
+    var lo = Math.floor(m * 0.55), hi = Math.ceil(m * 1.8), cands = [], best = 9, j;
+    for (j = 0; j < n; j++) {
+      var dur = j - start[j] + 1;
+      if (dur < lo || dur > hi) continue;
+      if (cost[j] < best) best = cost[j];
+      var l = j > 0 ? cost[j - 1] : 9, rr = j < n - 1 ? cost[j + 1] : 9;
+      if (cost[j] <= S.tol && cost[j] <= l && cost[j] < rr) cands.push({ j: j, c: cost[j] });
+    }
+    cands.sort(function (a, b) { return a.c - b.c; });
+    var gap = Math.max(3, Math.round(m * 0.6)), keep = [];
+    cands.forEach(function (c) {
+      for (var q = 0; q < keep.length; q++) if (Math.abs(keep[q].j - c.j) < gap) return;
+      keep.push(c);
+    });
+    var added = 0, speechDur = Math.max(0.6, S.ac.dur);
+    keep.forEach(function (c) {
+      var t = (pooledBase + winStartIdx + c.j) * 0.04;
+      for (var k = 0; k < counted.length; k++) if (Math.abs(counted[k] - t) < speechDur * 0.6) return;
+      counted.push(t); added++;
+    });
+    if (counted.length > 60) counted = counted.slice(-30);
+    if (added) bump(added, true);
+    el.heard.textContent = "closest match " + (best < 9 ? best.toFixed(2) : "none") + " (counts when below " + S.tol.toFixed(2) + ")";
+  }
+
+  async function acousticLoop() {
+    while (listening && S.engine === "acoustic") {
+      try { acousticStep(); } catch (e) { setStatus("Listening error: " + (e && e.message ? e.message : e)); }
+      await sleep(250);
+    }
+  }
+
   /* ---------- record the reference mantra ---------- */
   var refRecording = false, refTimer = null;
   el.recRef.addEventListener("click", async function () {
     if (refRecording) { finishRef(); return; }
-    if (!session) return;
+    if (S.engine === "phoneme" && !session) { setStatus("Load the speech model first."); return; }
     try { await startCapture(); }
     catch (e) { setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone."); return; }
     recChunks = []; refRecording = true;
@@ -548,14 +770,20 @@
     setStatus("Working out how your mantra sounds...");
     await new Promise(function (r) { setTimeout(r, 30); });
     try {
-      var ph = await infer(wav);
-      if (ph.length < 3) { setStatus("No clear speech heard. Move closer to the microphone and try again."); }
-      else {
-        S.ref = ph.map(function (x) { return x.p; });
-        S.refDur = Math.max(0.8, (ph[ph.length - 1].ms - ph[0].ms) / 1000 + 0.25);
-        saveRef();
-        setStatus("Mantra saved. Tap Start listening when ready.");
+      var ac = buildAcousticRef(wav);
+      if (!ac) { setStatus("No clear speech heard. Move closer to the microphone and try again."); el.recRef.disabled = false; updateReady(); return; }
+      S.ac = ac; store("ac", ac);
+      var msg = "Mantra saved. Tap Start listening when ready.";
+      if (session) {
+        var ph = await infer(wav);
+        if (ph.length >= 3) {
+          S.ref = ph.map(function (x) { return x.p; });
+          S.refDur = Math.max(0.8, (ph[ph.length - 1].ms - ph[0].ms) / 1000 + 0.25);
+          store("ref", S.ref); store("refDur", S.refDur);
+        }
       }
+      renderRef();
+      setStatus(msg);
     } catch (e) { setStatus("Could not process the recording: " + (e && e.message ? e.message : e)); }
     el.recRef.disabled = false;
     updateReady();
@@ -572,18 +800,18 @@
 
   el.start.addEventListener("click", async function () {
     if (listening) { stopListening(); return; }
-    if (!session || S.ref.length < 3) return;
+    if (!engineReady()) return;
     try { await startCapture(); }
     catch (e) { setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone."); return; }
     listening = true; counted = [];
     el.start.textContent = "Stop listening"; el.start.classList.add("rec");
     el.state.textContent = "Listening"; el.state.classList.add("on");
-    el.recRef.disabled = true; el.load.disabled = true;
+    el.recRef.disabled = true; el.load.disabled = true; el.engine.disabled = true;
     el.heard.textContent = "";
     setStatus("Chant at your usual pace. Counts appear a moment after each repetition.");
     tick(false);
     holdScreen();
-    liveLoop();
+    if (S.engine === "acoustic") { resetFeatureStream(); acousticLoop(); } else liveLoop();
   });
 
   function stopListening() {
@@ -591,7 +819,7 @@
     stopCapture(); releaseScreen();
     el.start.textContent = "Start listening"; el.start.classList.remove("rec");
     el.state.textContent = "Not listening"; el.state.classList.remove("on");
-    el.load.disabled = false;
+    el.load.disabled = false; el.engine.disabled = false;
     updateReady();
   }
 
@@ -639,8 +867,7 @@
 
   renderCount();
   renderRef();
-  updateReady();
-  autoLoadIfCached();
+  applyEngine();
 })();
 </script>
 </body>
