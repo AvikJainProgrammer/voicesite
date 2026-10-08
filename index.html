@@ -90,6 +90,11 @@
   .tag.good { color: var(--good); } .tag.odd { color: var(--warn); }
   .rec .acts { display: flex; gap: 6px; flex-wrap: wrap; }
   .rec .acts button { padding: 7px 10px; font-size: 0.85rem; flex: 0 0 auto; }
+  .viz { overflow-x: auto; border-radius: 8px; }
+  .vizin { position: relative; min-width: 100%; }
+  .vizin canvas { display: block; width: 100%; height: 84px; border-radius: 8px; background: #0b1020; }
+  .labs { position: relative; height: 1.7em; margin-top: 2px; }
+  .labs span { position: absolute; top: 0; transform: translateX(-50%); font-size: 1rem; white-space: nowrap; }
   .typical { font-size: 0.85rem; color: var(--muted); }
   details > div { display: grid; gap: 12px; margin-top: 12px; }
 </style>
@@ -126,6 +131,15 @@
       <input type="text" id="newA" placeholder="For example: Paris" autocomplete="off">
       <button id="addItem">Add question</button>
       <div class="note">After adding, record the spoken answer three or more times so the app learns how you say it. Then open Review recordings to listen, check the sounds, and switch off any that went wrong.</div>
+    </section>
+
+    <section aria-labelledby="ph">
+      <h2 id="ph">Sound symbols</h2>
+      <div class="note">Each recording gets a picture of how it sounds. To also see its phoneme symbols on that picture, load the phoneme model once. It is a large download (about 360 MB), so use Wi-Fi. Answers are checked without it.</div>
+      <button id="pmLoad" class="secondary">Download and load phoneme model</button>
+      <progress id="pmProg" value="0" max="1" hidden style="width:100%;height:8px;accent-color:var(--accent)"></progress>
+      <div class="status" id="pmStatus" role="status">Phoneme model not loaded.</div>
+      <button id="pmAll" class="secondary" hidden>Show sounds for every recording</button>
     </section>
 
     <section aria-labelledby="ih">
@@ -189,13 +203,6 @@
           <label for="wait">Seconds to wait for you to start speaking</label>
           <select id="wait"><option>6</option><option selected>10</option><option>15</option><option>20</option></select>
         </div>
-        <div>
-          <span class="cap">Phoneme symbols (optional)</span>
-          <div class="note">Load this to see the sound symbols for each recording on the Build tab. It is a large download (about 360 MB), so use Wi-Fi. Answers are checked without it.</div>
-          <button id="pmLoad" class="secondary" style="margin-top:8px">Download and load phoneme model</button>
-          <progress id="pmProg" value="0" max="1" hidden style="width:100%;height:8px;accent-color:var(--accent)"></progress>
-          <div class="status" id="pmStatus" role="status"></div>
-        </div>
         <div class="note">Open this page from an https:// link in Chrome. In-app previews block the microphone.</div>
       </div>
     </details>
@@ -211,7 +218,7 @@
   var el = {};
   ["tabBuild","tabQuiz","buildPane","quizPane","deckSel","deckName","deckNew","deckRename","deckDel","newQ","newA","addItem",
    "level","level2","buildStatus","items","quizSel","shuffle","showQ","qStart","qCard","qNum","qText","qPhase","qBadge","qDetail",
-   "qRepeat","qHear","qSkip","summary","pmLoad","pmProg","pmStatus","voice","rate","rateVal","tolScale","tolVal","tries","wait"].forEach(function (k) { el[k] = $(k); });
+   "qRepeat","qHear","qSkip","summary","pmLoad","pmProg","pmStatus","pmAll","voice","rate","rateVal","tolScale","tolVal","tries","wait"].forEach(function (k) { el[k] = $(k); });
 
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -643,7 +650,8 @@
       el.pmProg.removeAttribute("value");
       PM.session = await ort.InferenceSession.create(buf, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
       buf = null;
-      el.pmStatus.textContent = "Phoneme model ready. New recordings will show their sounds, and you can tap Show sounds on older ones.";
+      el.pmStatus.textContent = "Phoneme model ready. New recordings will show their sounds. For older ones, tap the button below.";
+      el.pmAll.hidden = false;
       renderItems();
     } catch (e) {
       PM.session = null;
@@ -651,6 +659,17 @@
       if (/fetch/i.test(em)) em += ". Open this page from an https:// link in Chrome.";
       el.pmStatus.textContent = "Could not load: " + em;
     } finally { el.pmProg.hidden = true; el.pmLoad.disabled = false; }
+  });
+  el.pmAll.addEventListener("click", async function () {
+    el.pmAll.disabled = true;
+    var todo = [];
+    DB.decks.forEach(function (d) { d.items.forEach(function (it) { it.samples.forEach(function (sm) { if (sm.id && !(sm.ph && sm.pms)) todo.push([it, sm]); }); }); });
+    for (var z = 0; z < todo.length; z++) {
+      el.pmStatus.textContent = "Working out sounds: " + (z + 1) + " of " + todo.length + "...";
+      await computeSounds(todo[z][0], todo[z][1]);
+    }
+    el.pmStatus.textContent = todo.length ? "Done. Open Review recordings on a question to see the symbols on each picture." : "Every recording already has its sounds.";
+    el.pmAll.disabled = false; renderItems();
   });
   async function inferPhones(raw) {
     var d = new Float32Array(raw.length), mean = 0, i;
@@ -667,7 +686,7 @@
     for (var t = 0; t < T; t++) {
       var best = 0, bv = -Infinity, base = t * V;
       for (var k = 0; k < V; k++) { var val = data[base + k]; if (val > bv) { bv = val; best = k; } }
-      if (best !== prev) { var tok = PM.tok[best]; if (tok !== undefined && !PM_SPECIAL[tok]) ph.push(tok); }
+      if (best !== prev) { var tok = PM.tok[best]; if (tok !== undefined && !PM_SPECIAL[tok]) ph.push({ p: tok, ms: t * 20 }); }
       prev = best;
     }
     return ph;
@@ -679,6 +698,66 @@
       if (await c.match(PM.model)) el.pmLoad.textContent = "Load phoneme model (already downloaded)";
     } catch (e) {}
   })();
+
+
+  /* ----- picture of a recording: mel spectrogram with phoneme labels ----- */
+  function melSpectrogram(raw) {
+    var out = [], n = Math.floor((raw.length - WIN) / HOP) + 1;
+    for (var k = 0; k < n; k++) {
+      for (var i = 0; i < WIN; i++) frameBuf[i] = raw[k * HOP + i];
+      frameFeature();
+      out.push(Float32Array.from(melE));
+    }
+    return out;
+  }
+  var STOPS = [[0, 11, 16, 32], [0.35, 29, 78, 137], [0.65, 242, 165, 65], [1, 255, 246, 214]];
+  function colorAt(t) {
+    t = Math.max(0, Math.min(1, t));
+    for (var i = 1; i < STOPS.length; i++) {
+      if (t <= STOPS[i][0]) {
+        var a = STOPS[i - 1], b = STOPS[i], u = (t - a[0]) / (b[0] - a[0]);
+        return [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u];
+      }
+    }
+    return [255, 246, 214];
+  }
+  function paintSpectrogram(cv, sp) {
+    var nF = sp.length, ctx = cv.getContext("2d");
+    cv.width = nF; cv.height = NMEL;
+    if (!ctx) return;
+    var all = [], k, m;
+    sp.forEach(function (fr) { for (m = 0; m < NMEL; m++) all.push(fr[m]); });
+    all.sort(function (a, b) { return a - b; });
+    var lo = all[Math.floor(all.length * 0.05)], hi = all[Math.floor(all.length * 0.995)];
+    if (hi - lo < 1e-3) hi = lo + 1;
+    var img = ctx.createImageData(nF, NMEL);
+    for (k = 0; k < nF; k++) for (m = 0; m < NMEL; m++) {
+      var c = colorAt((sp[k][m] - lo) / (hi - lo)), y = NMEL - 1 - m, o = (y * nF + k) * 4;
+      img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+  async function drawRec(smp, wrap) {
+    var buf = await idbGet(smp.id);
+    if (!buf) { wrap.className = "note"; wrap.textContent = "No picture: this recording has no saved audio (it was made before audio saving was added, or storage is blocked). Record it again."; return; }
+    var raw = fromInt16(buf);
+    if (raw.length < WIN * 2) { wrap.className = "note"; wrap.textContent = "Recording is too short to draw."; return; }
+    var sp = melSpectrogram(raw), secs = raw.length / SR;
+    var inner = document.createElement("div"); inner.className = "vizin"; inner.style.width = Math.max(280, Math.round(secs * 240)) + "px";
+    var cv = document.createElement("canvas"); cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "Sound picture of recording, time left to right, pitch bottom to top");
+    paintSpectrogram(cv, sp);
+    inner.appendChild(cv);
+    if (smp.ph && smp.pms && smp.pms.length === smp.ph.length) {
+      var labs = document.createElement("div"); labs.className = "labs ipa";
+      smp.ph.forEach(function (p, i) {
+        var sp2 = document.createElement("span"); sp2.textContent = p;
+        sp2.style.left = Math.min(98, Math.max(2, (smp.pms[i] + 10) / (secs * 1000) * 100)) + "%";
+        labs.appendChild(sp2);
+      });
+      inner.appendChild(labs);
+    }
+    wrap.className = "viz"; wrap.textContent = ""; wrap.appendChild(inner);
+  }
 
   /* ----- reviewing recordings ----- */
   var openItems = {};
@@ -718,13 +797,14 @@
     }
     return { rows: rows, typ: typ };
   }
+  function applyPhones(smp, arr) { smp.ph = arr.map(function (x) { return x.p; }); smp.pms = arr.map(function (x) { return x.ms; }); }
   async function computeSounds(item, smp) {
     if (!PM.session) { setBuild("Load the phoneme model first (Settings, near the bottom)."); return false; }
     var buf = await idbGet(smp.id);
     if (!buf) { setBuild("The audio for that recording was not saved. Record it again."); return false; }
     setBuild("Working out the sounds...");
     await sleep(30);
-    try { smp.ph = await inferPhones(fromInt16(buf)); save(); return true; }
+    try { applyPhones(smp, await inferPhones(fromInt16(buf))); save(); return true; }
     catch (e) { setBuild("Could not read the sounds: " + (e && e.message ? e.message : e)); return false; }
   }
 
@@ -800,9 +880,11 @@
         info.textContent = smp.dur.toFixed(1) + " s" + (r.fit !== null ? " . distance to nearest other " + r.fit.toFixed(2) : "");
         head.appendChild(info);
         card2.appendChild(head);
+        var viz = document.createElement("div"); viz.className = "viz note"; viz.textContent = "Drawing...";
+        card2.appendChild(viz); drawRec(smp, viz);
         var snd = document.createElement("div"); snd.className = "sounds ipa";
-        snd.textContent = smp.ph && smp.ph.length ? smp.ph.join(" ") : (smp.ph ? "(no sounds detected)" : "Sounds not shown yet");
-        if (!(smp.ph)) snd.style.cssText = "font-size:0.85rem;color:var(--muted);font-family:inherit";
+        snd.textContent = smp.ph && smp.ph.length ? smp.ph.join(" ") : (smp.ph ? "(no sounds detected)" : (PM.session ? "Sounds not shown yet. Tap Show sounds." : "Sound symbols appear here once the phoneme model is loaded (Sound symbols section above)."));
+        if (!(smp.ph && smp.ph.length)) snd.style.cssText = "font-size:0.85rem;color:var(--muted);font-family:inherit;word-spacing:normal";
         card2.appendChild(snd);
         var tag = document.createElement("div");
         if (r.outlier) { tag.className = "tag odd"; tag.textContent = "Sounds different from your other recordings. Consider switching it off."; }
@@ -817,7 +899,7 @@
           playRaw(fromInt16(buf));
         });
         acts.appendChild(play);
-        if (!(smp.ph && smp.ph.length)) {
+        if (PM.session && !(smp.ph && smp.pms)) {
           var sh = document.createElement("button"); sh.className = "secondary"; sh.type = "button"; sh.textContent = "Show sounds";
           sh.addEventListener("click", async function () { sh.disabled = true; var ok = await computeSounds(item, smp); if (ok) { setBuild("Done."); } renderItems(); sh.disabled = false; });
           acts.appendChild(sh);
@@ -863,7 +945,7 @@
       if (PM.session && raw.length > SR * 0.3) {
         setBuild("Working out the sounds...");
         await sleep(30);
-        try { smp.ph = await inferPhones(raw); save(); shown = ": " + smp.ph.join(" "); } catch (e) {}
+        try { applyPhones(smp, await inferPhones(raw)); save(); shown = ": " + smp.ph.join(" "); } catch (e) {}
       }
       setBuild("Saved recording " + item.samples.length + " (" + utt.dur.toFixed(1) + " s)" + shown + ". Open Review recordings to check it.");
       openItems[item.id] = true;
@@ -1049,7 +1131,7 @@
   renderDecks();
   renderItems();
   showTab("build");
-  window.__trainer = { prepareUtterance: prepareUtterance, dtwFull: dtwFull, makeEndpointer: makeEndpointer, frameFeature: frameFeature, frameBuf: frameBuf };
+  window.__trainer = { melSpectrogram: melSpectrogram, paintSpectrogram: paintSpectrogram, drawRec: drawRec, prepareUtterance: prepareUtterance, dtwFull: dtwFull, makeEndpointer: makeEndpointer, frameFeature: frameFeature, frameBuf: frameBuf };
 })();
 </script>
 </body>
