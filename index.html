@@ -3,19 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Phoneme Listener</title>
+<title>Mantra Counter</title>
 <style>
   :root {
-    --bg: #f3f5f4; --surface: #ffffff; --fg: #17201d; --muted: #5d6b66;
-    --line: #d5dcd9; --accent: #0b7a5f; --accent-fg: #ffffff; --rec: #c2331f;
-    --chip: #e4efeb;
+    --bg: #eef1f5; --surface: #ffffff; --fg: #14181f; --muted: #5b6672;
+    --line: #d3d9e0; --accent: #b84e0a; --accent-fg: #ffffff; --ring: #dfe4ea;
+    --chip: #e3e8ee; --good: #1d7a4a; --warn: #a15c00; --rec: #c2331f;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0f1513; --surface: #182019; --fg: #e6efeb; --muted: #94a59e;
-      --line: #2a3832; --accent: #3fc79f; --accent-fg: #07120e; --rec: #ff6b55;
-      --chip: #203029; color-scheme: dark;
+      --bg: #0e1217; --surface: #161c24; --fg: #e8edf2; --muted: #93a0ad;
+      --line: #28323d; --accent: #f0963c; --accent-fg: #1a0d02; --ring: #26303a;
+      --chip: #212b36; --good: #4cc98a; --warn: #e8b04a; --rec: #ff6b55;
+      color-scheme: dark;
     }
   }
   [hidden] { display: none !important; }
@@ -26,88 +27,132 @@
     font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
   }
-  main { max-width: 640px; margin: 0 auto; display: grid; gap: 16px; }
-  h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
-  .sub { color: var(--muted); font-size: 0.9rem; margin: 2px 0 0; }
-  .ipa, .mono { font-family: "Charis SIL", "Gentium Plus", "Noto Sans", "DejaVu Sans", "Segoe UI", system-ui, sans-serif; }
-  section { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
-  label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-  select, input[type=text] {
+  main { max-width: 560px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: 1.3rem; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 0.88rem; margin: 2px 0 0; }
+  .ipa { font-family: "Charis SIL", "Gentium Plus", "Noto Sans", "DejaVu Sans", "Segoe UI", system-ui, sans-serif; }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+  label.cap, .cap { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  select, input[type=text], input[type=number] {
     width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px;
     border: 1px solid var(--line); background: var(--bg); color: var(--fg);
   }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
   button {
     font: inherit; font-weight: 600; padding: 12px 16px; border-radius: 10px; border: 0;
-    background: var(--accent); color: var(--accent-fg); cursor: pointer;
+    background: var(--accent); color: var(--accent-fg); cursor: pointer; touch-action: manipulation;
   }
   button.secondary { background: var(--chip); color: var(--fg); }
+  button.rec { background: var(--rec); color: #fff; }
   button:disabled { opacity: 0.45; cursor: not-allowed; }
-  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .row > * { flex: 1 1 140px; }
+  :is(button, select, input, summary):focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 1 1 120px; min-width: 0; }
   progress { width: 100%; height: 8px; accent-color: var(--accent); }
-  .status { font-size: 0.9rem; color: var(--muted); min-height: 1.4em; overflow-wrap: anywhere; }
-  .rec { background: var(--rec); color: #fff; }
-  .big { font-size: 1.9rem; line-height: 1.5; overflow-wrap: anywhere; word-spacing: 0.15em; }
+  .status { font-size: 0.88rem; color: var(--muted); min-height: 1.4em; overflow-wrap: anywhere; }
+
+  .counter { text-align: center; gap: 8px; }
+  .dial { position: relative; width: min(72vw, 280px); aspect-ratio: 1; margin: 4px auto 0; max-width: 100%; }
+  .dial svg { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
+  .dial .track { fill: none; stroke: var(--ring); stroke-width: 9; }
+  .dial .bar { fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.35s ease; }
+  .dial .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .num { font-size: clamp(3.4rem, 22vw, 5.6rem); font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
+  .bead { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  .pulse .num { animation: pop 0.25s ease-out; }
+  @keyframes pop { from { transform: scale(1.08); } to { transform: scale(1); } }
+  @media (prefers-reduced-motion: reduce) { .pulse .num { animation: none; } .dial .bar { transition: none; } }
+  .meter { height: 6px; border-radius: 3px; background: var(--ring); overflow: hidden; }
+  .meter > i { display: block; height: 100%; width: 0; background: var(--good); transition: width 0.08s linear; }
+  .heard { font-size: 0.95rem; color: var(--muted); min-height: 2.8em; overflow-wrap: anywhere; text-align: left; }
+  .state { font-size: 0.85rem; font-weight: 600; }
+  .state.on { color: var(--good); }
+
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { background: var(--chip); border-radius: 8px; padding: 4px 8px; text-align: center; min-width: 44px; }
-  .chip b { display: block; font-size: 1.2rem; font-weight: 500; }
-  .chip small { color: var(--muted); font-size: 0.68rem; font-variant-numeric: tabular-nums; }
-  details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
-  .hist { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-  .hist li { border-top: 1px solid var(--line); padding-top: 8px; overflow-wrap: anywhere; }
-  .hist time { color: var(--muted); font-size: 0.75rem; display: block; }
+  .chip { background: var(--chip); color: var(--fg); border-radius: 8px; padding: 6px 10px; font-size: 1.15rem; font-weight: 500; min-width: 40px; }
   .note { font-size: 0.82rem; color: var(--muted); }
+  .switch { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
+  .switch input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
+  .val { font-variant-numeric: tabular-nums; font-weight: 600; }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>Phoneme Listener</h1>
-    <p class="sub">Speech to IPA phonemes, computed on this device. After the first model download, it works offline.</p>
+    <h1>Mantra Counter</h1>
+    <p class="sub">Listens while you chant and counts each repetition. Runs on this device.</p>
   </header>
 
-  <section aria-labelledby="m-h">
-    <label id="m-h" for="model">Model</label>
-    <select id="model">
+  <section class="counter" id="counterBox" aria-label="Counter">
+    <div class="dial" id="dial">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="track" cx="60" cy="60" r="52"></circle>
+        <circle class="bar" id="bar" cx="60" cy="60" r="52"></circle>
+      </svg>
+      <div class="center">
+        <div class="num" id="count" aria-live="polite">0</div>
+        <div class="bead" id="bead">bead 0 of 108</div>
+      </div>
+    </div>
+    <div class="state" id="state">Not listening</div>
+    <div class="meter" aria-hidden="true"><i id="level"></i></div>
+    <div class="row">
+      <button id="start" disabled>Start listening</button>
+    </div>
+    <div class="row">
+      <button class="secondary" id="minus" aria-label="Subtract one">&minus; 1</button>
+      <button class="secondary" id="plus" aria-label="Add one">+ 1</button>
+      <button class="secondary" id="reset">Reset</button>
+    </div>
+    <div class="status" id="status" role="status"></div>
+    <div class="heard ipa" id="heard" aria-hidden="true"></div>
+  </section>
+
+  <section aria-labelledby="mh">
+    <span class="cap" id="mh">Your mantra</span>
+    <input type="text" id="mname" placeholder="Name (optional), for example Om Namah Shivaya" aria-label="Mantra name">
+    <div class="row">
+      <button id="recRef" disabled>Record the mantra once</button>
+    </div>
+    <div class="note">Say the mantra one time at your normal chanting pace, then tap Stop. The app stores how it sounds. Tap a sound below to remove it if it looks wrong.</div>
+    <div class="chips ipa" id="refChips"></div>
+    <div class="note" id="refInfo">No mantra recorded yet.</div>
+    <label class="cap" for="refText">Phonemes (editable, separated by spaces)</label>
+    <input type="text" class="ipa" id="refText" placeholder="Filled in after you record" autocomplete="off" spellcheck="false">
+  </section>
+
+  <section aria-labelledby="sh">
+    <span class="cap" id="sh">Settings</span>
+    <div>
+      <label for="thr">Match strictness: <span class="val" id="thrVal">65%</span></label>
+      <input type="range" id="thr" min="40" max="95" step="1" value="65">
+      <div class="note">Lower it if repetitions are missed. Raise it if other speech gets counted.</div>
+    </div>
+    <div>
+      <label for="target">Beads per round</label>
+      <select id="target">
+        <option value="108">108</option>
+        <option value="54">54</option>
+        <option value="27">27</option>
+        <option value="21">21</option>
+        <option value="11">11</option>
+      </select>
+    </div>
+    <label class="switch"><input type="checkbox" id="snd" checked> Soft tick on each count</label>
+    <label class="switch"><input type="checkbox" id="vib" checked> Vibrate on each count</label>
+  </section>
+
+  <section aria-labelledby="lh">
+    <span class="cap" id="lh">Speech model</span>
+    <select id="model" aria-label="Model">
       <option value="int8">wav2vec2 phoneme, INT8 (recommended)</option>
       <option value="fp16">wav2vec2 phoneme, FP16 (experimental)</option>
-      <option value="custom">Custom ONNX URL</option>
     </select>
-    <div id="customBox" hidden class="row">
-      <input type="text" id="customModel" placeholder="Model .onnx URL" aria-label="Custom model URL">
-      <input type="text" id="customVocab" placeholder="vocab.json URL" aria-label="Custom vocab URL">
-    </div>
-    <button id="load">Download and load model</button>
+    <button id="load" class="secondary">Download and load model</button>
     <progress id="prog" value="0" max="1" hidden></progress>
-    <div class="status" id="status" role="status">Model not loaded. First download is a few hundred MB, so use Wi-Fi.</div>
+    <div class="status" id="mstatus" role="status">Model not loaded. The first download is a few hundred MB, so use Wi-Fi.</div>
+    <div class="note">Open this page from an https:// link in Chrome. In-app previews block the microphone and downloads.</div>
   </section>
-
-  <section aria-labelledby="r-h">
-    <label id="r-h">Input</label>
-    <div class="row">
-      <button id="rec" disabled>Record</button>
-      <button id="pick" class="secondary" disabled>Choose audio file</button>
-    </div>
-    <input type="file" id="file" accept="audio/*" hidden>
-    <div class="note">Records up to 20 seconds. Noise suppression is turned off so the model hears the raw speech.</div>
-  </section>
-
-  <section aria-labelledby="o-h" aria-live="polite">
-    <label id="o-h">Result</label>
-    <div class="big ipa" id="out">Nothing recorded yet.</div>
-    <details>
-      <summary>Phone timings</summary>
-      <div class="chips ipa" id="chips"></div>
-    </details>
-    <div class="row">
-      <button class="secondary" id="copy" disabled>Copy IPA</button>
-      <button class="secondary" id="clear" disabled>Clear history</button>
-    </div>
-    <ul class="hist ipa" id="hist"></ul>
-  </section>
-
-  <p class="note">Microphone access needs HTTPS (or localhost). The output is a phoneme sequence from a CTC model, so expect some substitutions, especially with noise or strong accents.</p>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
@@ -129,37 +174,142 @@
     }
   };
   var CACHE = "phoneme-listener-v1";
-  var MAX_SECONDS = 20;
+  var SR = 16000;
   var SPECIAL = { "<pad>": 1, "<s>": 1, "</s>": 1, "<unk>": 1 };
+  var SILENCE_RMS = 0.004;
 
   var $ = function (id) { return document.getElementById(id); };
-  var els = {
-    model: $("model"), customBox: $("customBox"), customModel: $("customModel"), customVocab: $("customVocab"),
-    load: $("load"), prog: $("prog"), status: $("status"), rec: $("rec"), pick: $("pick"), file: $("file"),
-    out: $("out"), chips: $("chips"), copy: $("copy"), clear: $("clear"), hist: $("hist")
+  var el = {};
+  ["counterBox","dial","bar","count","bead","state","level","start","minus","plus","reset","status","heard",
+   "mname","recRef","refChips","refInfo","refText","thr","thrVal","target","snd","vib",
+   "model","load","prog","mstatus"].forEach(function (k) { el[k] = $(k); });
+
+  /* ---------- persistence (best effort) ---------- */
+  function store(k, v) { try { localStorage.setItem("mantra." + k, JSON.stringify(v)); } catch (e) {} }
+  function recall(k, d) { try { var v = localStorage.getItem("mantra." + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+
+  var S = {
+    count: recall("count", 0),
+    target: recall("target", 108),
+    thr: recall("thr", 65),
+    ref: recall("ref", []),
+    refDur: recall("refDur", 0),
+    name: recall("name", ""),
+    snd: recall("snd", true),
+    vib: recall("vib", true)
   };
 
-  var session = null, idToTok = [], lastIpa = "";
-  var mediaRec = null, stream = null, chunks = [], stopTimer = null;
-
-  function setStatus(t) { els.status.textContent = t; }
-
-  els.model.addEventListener("change", function () {
-    els.customBox.hidden = els.model.value !== "custom";
+  /* ---------- counter UI ---------- */
+  var CIRC = 2 * Math.PI * 52;
+  el.bar.style.strokeDasharray = String(CIRC);
+  function renderCount() {
+    var t = S.target, c = S.count;
+    var inRound = ((c % t) + t) % t;
+    var round = Math.floor(c / t);
+    el.count.textContent = String(c);
+    el.bead.textContent = "bead " + inRound + " of " + t + (round > 0 ? " · round " + (round + 1) : "");
+    el.bar.style.strokeDashoffset = String(CIRC * (1 - inRound / t));
+  }
+  function bump(n, fromListener) {
+    S.count = Math.max(0, S.count + n);
+    store("count", S.count);
+    renderCount();
+    if (n > 0) {
+      el.dial.classList.remove("pulse"); void el.dial.offsetWidth; el.dial.classList.add("pulse");
+      var roundDone = S.count % S.target === 0;
+      if (S.snd) tick(roundDone);
+      if (S.vib && navigator.vibrate) { try { navigator.vibrate(roundDone ? [120, 60, 120] : 25); } catch (e) {} }
+    }
+  }
+  el.plus.addEventListener("click", function () { bump(1); });
+  el.minus.addEventListener("click", function () { bump(-1); });
+  var resetArmed = false, resetTimer = null;
+  el.reset.addEventListener("click", function () {
+    if (!resetArmed) {
+      resetArmed = true; el.reset.textContent = "Tap again to reset";
+      resetTimer = setTimeout(function () { resetArmed = false; el.reset.textContent = "Reset"; }, 3000);
+      return;
+    }
+    clearTimeout(resetTimer); resetArmed = false; el.reset.textContent = "Reset";
+    S.count = 0; store("count", 0); renderCount();
   });
 
-  var originOk = /^https?:$/.test(location.protocol) && location.origin !== "null" && window.top === window.self;
-  if (!originOk) {
-    setStatus("This looks like an in-app preview, which blocks downloads and the microphone. Open this page from an https:// link in Chrome.");
+  /* soft tick sound, from its own audio context */
+  var tickCtx = null;
+  function tick(long) {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!tickCtx) tickCtx = new AC();
+      if (tickCtx.state === "suspended") tickCtx.resume();
+      var o = tickCtx.createOscillator(), g = tickCtx.createGain();
+      o.type = "sine"; o.frequency.value = long ? 523 : 880;
+      var t0 = tickCtx.currentTime, d = long ? 0.5 : 0.09;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+      o.connect(g); g.connect(tickCtx.destination);
+      o.start(t0); o.stop(t0 + d + 0.02);
+    } catch (e) {}
   }
 
+  /* ---------- settings ---------- */
+  el.thr.value = S.thr; el.thrVal.textContent = S.thr + "%";
+  el.thr.addEventListener("input", function () {
+    S.thr = parseInt(el.thr.value, 10); el.thrVal.textContent = S.thr + "%"; store("thr", S.thr);
+  });
+  el.target.value = String(S.target);
+  el.target.addEventListener("change", function () { S.target = parseInt(el.target.value, 10); store("target", S.target); renderCount(); });
+  el.snd.checked = S.snd; el.vib.checked = S.vib;
+  el.snd.addEventListener("change", function () { S.snd = el.snd.checked; store("snd", S.snd); if (S.snd) tick(false); });
+  el.vib.addEventListener("change", function () { S.vib = el.vib.checked; store("vib", S.vib); });
+  el.mname.value = S.name;
+  el.mname.addEventListener("input", function () { S.name = el.mname.value; store("name", S.name); });
+
+  function setStatus(t) { el.status.textContent = t; }
+  function setMStatus(t) { el.mstatus.textContent = t; }
+
+  /* ---------- reference mantra ---------- */
+  function renderRef() {
+    el.refChips.textContent = "";
+    S.ref.forEach(function (p, i) {
+      var b = document.createElement("button");
+      b.className = "chip secondary"; b.type = "button"; b.textContent = p;
+      b.setAttribute("aria-label", "Remove sound " + p);
+      b.addEventListener("click", function () { S.ref.splice(i, 1); saveRef(); });
+      el.refChips.appendChild(b);
+    });
+    el.refText.value = S.ref.join(" ");
+    el.refInfo.textContent = S.ref.length
+      ? S.ref.length + " sounds, about " + S.refDur.toFixed(1) + " s per repetition."
+      : "No mantra recorded yet.";
+    updateReady();
+  }
+  function saveRef() { store("ref", S.ref); store("refDur", S.refDur); renderRef(); }
+  el.refText.addEventListener("change", function () {
+    S.ref = el.refText.value.split(/\s+/).filter(Boolean);
+    if (!S.refDur) S.refDur = Math.max(1, S.ref.length * 0.18);
+    saveRef();
+  });
+
+  function updateReady() {
+    var ready = !!session && S.ref.length >= 3;
+    el.start.disabled = !ready && !listening;
+    el.recRef.disabled = !session || listening;
+    if (!listening) {
+      if (!session) setStatus("Load the speech model below to begin.");
+      else if (S.ref.length < 3) setStatus("Record your mantra once below, then start listening.");
+      else setStatus("Ready. Tap Start listening and begin chanting.");
+    }
+  }
+
+  /* ---------- model loading ---------- */
+  var session = null, idToTok = [];
+  var originOk = /^https?:$/.test(location.protocol) && location.origin !== "null" && window.top === window.self;
   if (window.ort) {
     ort.env.wasm.wasmPaths = ORT_BASE;
     ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
-  } else {
-    setStatus("Could not load the ONNX runtime. Check your connection and reload.");
-    els.load.disabled = true;
-  }
+  } else { setMStatus("Could not load the ONNX runtime. Check your connection and reload."); el.load.disabled = true; }
+  if (!originOk) setMStatus("This looks like an in-app preview, which blocks downloads and the microphone. Open this page from an https:// link in Chrome.");
 
   async function fetchCached(url, onProgress) {
     var cache = null;
@@ -169,48 +319,26 @@
       if (hit) { onProgress(1, 1, true); return await hit.arrayBuffer(); }
     }
     var res = await fetch(url);
-    if (!res.ok) throw new Error("Download failed (" + res.status + ") for " + url);
+    if (!res.ok) throw new Error("Download failed (" + res.status + ")");
     var total = parseInt(res.headers.get("content-length") || "0", 10);
-    var reader = res.body.getReader();
-    var parts = [], got = 0;
+    var reader = res.body.getReader(), parts = [], got = 0;
     for (;;) {
       var r = await reader.read();
       if (r.done) break;
-      parts.push(r.value); got += r.value.length;
-      onProgress(got, total, false);
+      parts.push(r.value); got += r.value.length; onProgress(got, total, false);
     }
     var buf = new Uint8Array(got), off = 0;
     for (var i = 0; i < parts.length; i++) { buf.set(parts[i], off); off += parts[i].length; }
     parts = null;
-    if (cache) {
-      try { await cache.put(url, new Response(buf.buffer.slice(0), { headers: { "content-type": "application/octet-stream" } })); }
-      catch (e) { /* storage full or blocked: the model still works this session */ }
-    }
+    if (cache) { try { await cache.put(url, new Response(buf.buffer.slice(0))); } catch (e) {} }
     return buf.buffer;
   }
 
-  async function autoLoadIfCached() {
-    if (!window.ort || !window.caches) return;
+  el.load.addEventListener("click", async function () {
+    var cfg = PRESETS[el.model.value];
+    el.load.disabled = true; el.prog.hidden = false; el.prog.value = 0;
     try {
-      var cache = await caches.open(CACHE);
-      if (await cache.match(PRESETS.int8.model)) {
-        els.model.value = "int8";
-        els.load.click();
-      }
-    } catch (e) {}
-  }
-
-  els.load.addEventListener("click", async function () {
-    var key = els.model.value;
-    var cfg = key === "custom"
-      ? { model: els.customModel.value.trim(), vocab: els.customVocab.value.trim() }
-      : PRESETS[key];
-    if (typeof cfg.vocab === "string") cfg = { model: cfg.model, vocab: [cfg.vocab] };
-    if (!cfg.model || !cfg.vocab[0]) { setStatus("Enter both a model URL and a vocab URL."); return; }
-    els.load.disabled = true; els.rec.disabled = true; els.pick.disabled = true;
-    els.prog.hidden = false; els.prog.value = 0;
-    try {
-      setStatus("Loading vocabulary...");
+      setMStatus("Loading vocabulary...");
       var vocab = null, lastErr = "";
       for (var vi = 0; vi < cfg.vocab.length && !vocab; vi++) {
         try {
@@ -222,28 +350,99 @@
       if (!vocab) throw new Error("Vocabulary download failed (" + lastErr + ")");
       idToTok = [];
       Object.keys(vocab).forEach(function (t) { idToTok[vocab[t]] = t; });
-
       var buf = await fetchCached(cfg.model, function (got, total, cached) {
-        if (cached) { setStatus("Reading model from local cache..."); els.prog.removeAttribute("value"); return; }
-        if (total) { els.prog.value = got / total; setStatus("Downloading model: " + Math.round(got / 1048576) + " of " + Math.round(total / 1048576) + " MB"); }
-        else { els.prog.removeAttribute("value"); setStatus("Downloading model: " + Math.round(got / 1048576) + " MB"); }
+        if (cached) { setMStatus("Reading model from local cache..."); el.prog.removeAttribute("value"); return; }
+        if (total) { el.prog.value = got / total; setMStatus("Downloading model: " + Math.round(got / 1048576) + " of " + Math.round(total / 1048576) + " MB"); }
+        else { el.prog.removeAttribute("value"); setMStatus("Downloading model: " + Math.round(got / 1048576) + " MB"); }
       });
-      setStatus("Starting the model (this can take a little while)...");
-      els.prog.removeAttribute("value");
+      setMStatus("Starting the model (this can take a little while)...");
+      el.prog.removeAttribute("value");
       session = await ort.InferenceSession.create(buf, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
       buf = null;
-      setStatus("Ready. Everything now runs on this device.");
-      els.rec.disabled = false; els.pick.disabled = false;
+      setMStatus("Model ready. Everything runs on this device.");
+      updateReady();
     } catch (e) {
       session = null;
       var em = e && e.message ? e.message : String(e);
-      if (!originOk || /fetch/i.test(em)) em += ". If you opened this from a preview or a file, open it from an https:// link in Chrome instead.";
-      setStatus("Could not load: " + em);
+      if (!originOk || /fetch/i.test(em)) em += ". Open this page from an https:// link in Chrome.";
+      setMStatus("Could not load: " + em);
     } finally {
-      els.prog.hidden = true; els.load.disabled = false;
+      el.prog.hidden = true; el.load.disabled = false;
     }
   });
 
+  async function autoLoadIfCached() {
+    if (!window.ort || !window.caches) return;
+    try {
+      var cache = await caches.open(CACHE);
+      if (await cache.match(PRESETS.int8.model)) { el.model.value = "int8"; el.load.click(); }
+    } catch (e) {}
+  }
+
+  /* ---------- audio capture at 16 kHz ---------- */
+  var RB = SR * 40, ring = new Float32Array(RB), total = 0;
+  var actx = null, stream = null, proc = null, srcNode = null, sink = null;
+  var recChunks = null;
+  var phase = 0, lastS = 0;
+
+  function pushSamples(arr, n) {
+    var peak = 0, sum = 0;
+    for (var i = 0; i < n; i++) {
+      var v = arr[i];
+      ring[(total + i) % RB] = v;
+      sum += v * v;
+    }
+    if (recChunks) recChunks.push(arr.slice(0, n));
+    total += n;
+    var rms = Math.sqrt(sum / Math.max(1, n));
+    el.level.style.width = Math.min(100, rms * 900) + "%";
+  }
+
+  async function startCapture() {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 }
+    });
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { actx = new AC({ sampleRate: SR }); } catch (e) { actx = new AC(); }
+    if (actx.state === "suspended") { try { await actx.resume(); } catch (e) {} }
+    var ratio = actx.sampleRate / SR;
+    phase = 0; lastS = 0;
+    srcNode = actx.createMediaStreamSource(stream);
+    proc = actx.createScriptProcessor(4096, 1, 1);
+    proc.onaudioprocess = function (e) {
+      var inp = e.inputBuffer.getChannelData(0);
+      if (ratio === 1) { pushSamples(inp, inp.length); return; }
+      var out = new Float32Array(Math.ceil(inp.length / ratio) + 2), n = 0;
+      while (phase < inp.length - 1) {
+        var i = Math.floor(phase), f = phase - i;
+        var a = i < 0 ? lastS : inp[i], b = inp[i + 1];
+        out[n++] = a + (b - a) * f;
+        phase += ratio;
+      }
+      phase -= inp.length; lastS = inp[inp.length - 1];
+      pushSamples(out, n);
+    };
+    sink = actx.createGain(); sink.gain.value = 0;
+    srcNode.connect(proc); proc.connect(sink); sink.connect(actx.destination);
+  }
+
+  function stopCapture() {
+    try { if (proc) { proc.onaudioprocess = null; proc.disconnect(); } } catch (e) {}
+    try { if (srcNode) srcNode.disconnect(); } catch (e) {}
+    try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { if (actx) actx.close(); } catch (e) {}
+    proc = srcNode = stream = actx = sink = null;
+    el.level.style.width = "0%";
+  }
+
+  function lastSamples(n) {
+    n = Math.min(n, total, RB);
+    var out = new Float32Array(n), start = total - n;
+    for (var i = 0; i < n; i++) out[i] = ring[(start + i) % RB];
+    return out;
+  }
+
+  /* ---------- inference ---------- */
   function half(h) {
     var s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
     if (e === 0) return s * Math.pow(2, -14) * (f / 1024);
@@ -251,35 +450,28 @@
     return s * Math.pow(2, e - 15) * (1 + f / 1024);
   }
 
-  async function toMono16k(arrayBuffer) {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    var ctx = new AC();
-    var ab;
-    try { ab = await ctx.decodeAudioData(arrayBuffer); } finally { try { ctx.close(); } catch (e) {} }
-    var len = Math.ceil(ab.duration * 16000);
-    var off = new OfflineAudioContext(1, len, 16000);
-    var src = off.createBufferSource();
-    src.buffer = ab; src.connect(off.destination); src.start();
-    var rendered = await off.startRendering();
-    var d = rendered.getChannelData(0).slice(0, MAX_SECONDS * 16000);
-    var mean = 0, i;
-    for (i = 0; i < d.length; i++) mean += d[i];
-    mean /= d.length;
+  async function infer(raw) {
+    var d = new Float32Array(raw.length), mean = 0, i;
+    for (i = 0; i < raw.length; i++) mean += raw[i];
+    mean /= raw.length;
     var v = 0;
-    for (i = 0; i < d.length; i++) { var x = d[i] - mean; v += x * x; }
-    var sd = Math.sqrt(v / d.length + 1e-7);
-    for (i = 0; i < d.length; i++) d[i] = (d[i] - mean) / sd;
-    return d;
-  }
-
-  function decodeCtc(data, T, V) {
+    for (i = 0; i < raw.length; i++) { var x = raw[i] - mean; v += x * x; }
+    var sd = Math.sqrt(v / raw.length + 1e-7);
+    for (i = 0; i < raw.length; i++) d[i] = (raw[i] - mean) / sd;
+    var feeds = {};
+    feeds[session.inputNames[0]] = new ort.Tensor("float32", d, [1, d.length]);
+    var res = await session.run(feeds);
+    var out = res[session.outputNames[0]];
+    var dims = out.dims, V = dims[dims.length - 1], T = dims[dims.length - 2], data = out.data;
+    if (out.type === "float16" || data instanceof Uint16Array) {
+      var f = new Float32Array(data.length);
+      for (i = 0; i < data.length; i++) f[i] = half(data[i]);
+      data = f;
+    }
     var phones = [], prev = -1;
     for (var t = 0; t < T; t++) {
       var best = 0, bv = -Infinity, base = t * V;
-      for (var k = 0; k < V; k++) {
-        var val = data[base + k];
-        if (val > bv) { bv = val; best = k; }
-      }
+      for (var k = 0; k < V; k++) { var val = data[base + k]; if (val > bv) { bv = val; best = k; } }
       if (best !== prev) {
         var tok = idToTok[best];
         if (tok !== undefined && !SPECIAL[tok]) phones.push({ p: tok, ms: t * 20 });
@@ -289,107 +481,165 @@
     return phones;
   }
 
-  async function transcribe(arrayBuffer) {
-    if (!session) { setStatus("Load the model first."); return; }
-    els.rec.disabled = true; els.pick.disabled = true;
-    try {
-      setStatus("Preparing audio...");
-      var wav = await toMono16k(arrayBuffer);
-      setStatus("Listening (" + (wav.length / 16000).toFixed(1) + " s of audio)...");
-      await new Promise(function (r) { setTimeout(r, 30); });
-      var t0 = performance.now();
-      var feeds = {};
-      feeds[session.inputNames[0]] = new ort.Tensor("float32", wav, [1, wav.length]);
-      var res = await session.run(feeds);
-      var out = res[session.outputNames[0]];
-      var dims = out.dims, V = dims[dims.length - 1], T = dims[dims.length - 2];
-      var data = out.data;
-      if (out.type === "float16" || data instanceof Uint16Array) {
-        var f = new Float32Array(data.length);
-        for (var i = 0; i < data.length; i++) f[i] = half(data[i]);
-        data = f;
+  /* ---------- fuzzy matching on phoneme sequences ---------- */
+  function baseOf(p) { return p.replace(/[ːˑʰʲʷ̩̯̃]/g, ""); }
+  function subCost(a, b) {
+    if (a === b) return 0;
+    if (baseOf(a) === baseOf(b)) return 0.4;
+    return 1;
+  }
+  /* Returns end indexes (1-based position in seq) of approximate occurrences of ref inside seq, with similarity scores. */
+  function findMatches(ref, seq, thr) {
+    var m = ref.length, n = seq.length;
+    if (m === 0 || n === 0) return [];
+    var prev = new Float32Array(n + 1), cur = new Float32Array(n + 1), i, j;
+    for (i = 1; i <= m; i++) {
+      cur[0] = i;
+      for (j = 1; j <= n; j++) {
+        var a = prev[j - 1] + subCost(ref[i - 1], seq[j - 1]);
+        var b = prev[j] + 1;
+        var c = cur[j - 1] + 1;
+        cur[j] = a < b ? (a < c ? a : c) : (b < c ? b : c);
       }
-      var phones = decodeCtc(data, T, V);
-      var secs = ((performance.now() - t0) / 1000).toFixed(1);
-      showResult(phones);
-      setStatus("Done in " + secs + " s.");
-    } catch (e) {
-      setStatus("Could not process audio: " + (e && e.message ? e.message : e));
-    } finally {
-      els.rec.disabled = false; els.pick.disabled = false;
+      var tmp = prev; prev = cur; cur = tmp;
     }
-  }
-
-  function showResult(phones) {
-    lastIpa = phones.map(function (x) { return x.p; }).join(" ");
-    els.out.textContent = lastIpa || "(no speech detected)";
-    els.chips.textContent = "";
-    phones.forEach(function (x) {
-      var c = document.createElement("div"); c.className = "chip";
-      var b = document.createElement("b"); b.textContent = x.p;
-      var s = document.createElement("small"); s.textContent = x.ms + " ms";
-      c.appendChild(b); c.appendChild(s); els.chips.appendChild(c);
+    var score = new Float32Array(n + 2);
+    for (j = 1; j <= n; j++) score[j] = 1 - prev[j] / m;
+    var peaks = [];
+    for (j = 1; j <= n; j++) {
+      if (score[j] >= thr && score[j] >= score[j - 1] && score[j] > score[j + 1]) peaks.push({ j: j, s: score[j] });
+    }
+    peaks.sort(function (x, y) { return y.s - x.s; });
+    var gap = Math.max(2, Math.round(m * 0.6)), keep = [];
+    peaks.forEach(function (pk) {
+      for (var q = 0; q < keep.length; q++) if (Math.abs(keep[q].j - pk.j) < gap) return;
+      keep.push(pk);
     });
-    els.copy.disabled = !lastIpa;
-    if (lastIpa) {
-      var li = document.createElement("li");
-      var tm = document.createElement("time"); tm.textContent = new Date().toLocaleTimeString();
-      var tx = document.createElement("div"); tx.textContent = lastIpa;
-      li.appendChild(tm); li.appendChild(tx);
-      els.hist.insertBefore(li, els.hist.firstChild);
-      els.clear.disabled = false;
-    }
+    keep.sort(function (x, y) { return x.j - y.j; });
+    return keep;
   }
 
-  els.copy.addEventListener("click", async function () {
-    try { await navigator.clipboard.writeText(lastIpa); setStatus("Copied."); }
-    catch (e) {
-      var r = document.createRange(); r.selectNodeContents(els.out);
-      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      setStatus("Text selected. Use your phone's copy action.");
-    }
-  });
-  els.clear.addEventListener("click", function () { els.hist.textContent = ""; els.clear.disabled = true; });
-
-  els.pick.addEventListener("click", function () { els.file.click(); });
-  els.file.addEventListener("change", async function () {
-    var f = els.file.files && els.file.files[0];
-    if (!f) return;
-    var ab = await f.arrayBuffer();
-    els.file.value = "";
-    transcribe(ab);
+  /* ---------- record the reference mantra ---------- */
+  var refRecording = false, refTimer = null;
+  el.recRef.addEventListener("click", async function () {
+    if (refRecording) { finishRef(); return; }
+    if (!session) return;
+    try { await startCapture(); }
+    catch (e) { setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone."); return; }
+    recChunks = []; refRecording = true;
+    el.recRef.textContent = "Stop"; el.recRef.classList.add("rec");
+    el.start.disabled = true;
+    setStatus("Say the mantra once, then tap Stop.");
+    refTimer = setTimeout(finishRef, 15000);
   });
 
-  function stopRecording() {
-    clearTimeout(stopTimer);
-    if (mediaRec && mediaRec.state !== "inactive") mediaRec.stop();
-  }
-
-  els.rec.addEventListener("click", async function () {
-    if (mediaRec && mediaRec.state === "recording") { stopRecording(); return; }
+  async function finishRef() {
+    clearTimeout(refTimer);
+    if (!refRecording) return;
+    refRecording = false;
+    var chunks = recChunks; recChunks = null;
+    stopCapture();
+    el.recRef.textContent = "Record the mantra once"; el.recRef.classList.remove("rec");
+    var len = 0; chunks.forEach(function (c) { len += c.length; });
+    var wav = new Float32Array(len), off = 0;
+    chunks.forEach(function (c) { wav.set(c, off); off += c.length; });
+    if (len < SR * 0.8) { setStatus("That was too short. Try again."); updateReady(); return; }
+    el.recRef.disabled = true;
+    setStatus("Working out how your mantra sounds...");
+    await new Promise(function (r) { setTimeout(r, 30); });
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 }
-      });
-    } catch (e) {
-      setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page over HTTPS and allow the microphone.");
-      return;
-    }
-    chunks = [];
-    mediaRec = new MediaRecorder(stream);
-    mediaRec.ondataavailable = function (ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
-    mediaRec.onstop = async function () {
-      stream.getTracks().forEach(function (t) { t.stop(); });
-      els.rec.textContent = "Record"; els.rec.classList.remove("rec");
-      var blob = new Blob(chunks, { type: mediaRec.mimeType || "audio/webm" });
-      transcribe(await blob.arrayBuffer());
-    };
-    mediaRec.start();
-    els.rec.textContent = "Stop"; els.rec.classList.add("rec");
-    els.pick.disabled = true;
-    setStatus("Recording... tap Stop when finished (auto-stops at " + MAX_SECONDS + " s).");
-    stopTimer = setTimeout(stopRecording, MAX_SECONDS * 1000);
+      var ph = await infer(wav);
+      if (ph.length < 3) { setStatus("No clear speech heard. Move closer to the microphone and try again."); }
+      else {
+        S.ref = ph.map(function (x) { return x.p; });
+        S.refDur = Math.max(0.8, (ph[ph.length - 1].ms - ph[0].ms) / 1000 + 0.25);
+        saveRef();
+        setStatus("Mantra saved. Tap Start listening when ready.");
+      }
+    } catch (e) { setStatus("Could not process the recording: " + (e && e.message ? e.message : e)); }
+    el.recRef.disabled = false;
+    updateReady();
+  }
+
+  /* ---------- live listening ---------- */
+  var listening = false, counted = [], wakeLock = null;
+
+  async function holdScreen() {
+    try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+  }
+  function releaseScreen() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+  document.addEventListener("visibilitychange", function () { if (listening && document.visibilityState === "visible") holdScreen(); });
+
+  el.start.addEventListener("click", async function () {
+    if (listening) { stopListening(); return; }
+    if (!session || S.ref.length < 3) return;
+    try { await startCapture(); }
+    catch (e) { setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone."); return; }
+    listening = true; counted = [];
+    el.start.textContent = "Stop listening"; el.start.classList.add("rec");
+    el.state.textContent = "Listening"; el.state.classList.add("on");
+    el.recRef.disabled = true; el.load.disabled = true;
+    el.heard.textContent = "";
+    setStatus("Chant at your usual pace. Counts appear a moment after each repetition.");
+    tick(false);
+    holdScreen();
+    liveLoop();
   });
+
+  function stopListening() {
+    listening = false;
+    stopCapture(); releaseScreen();
+    el.start.textContent = "Start listening"; el.start.classList.remove("rec");
+    el.state.textContent = "Not listening"; el.state.classList.remove("on");
+    el.load.disabled = false;
+    updateReady();
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  async function liveLoop() {
+    var lastRun = 0;
+    while (listening) {
+      var refDur = S.refDur || 2;
+      var winSec = Math.min(12, Math.max(5, refDur * 2.2 + 1));
+      var needNew = Math.max(0.8, refDur * 0.5) * SR;
+      if (total < refDur * SR * 1.1 || total - lastRun < needNew) { await sleep(150); continue; }
+      lastRun = total;
+      var raw = lastSamples(Math.round(winSec * SR));
+      var winEnd = total / SR, winStart = winEnd - raw.length / SR;
+      var tail = raw.subarray(Math.max(0, raw.length - SR * 2)), s2 = 0, i;
+      for (i = 0; i < tail.length; i++) s2 += tail[i] * tail[i];
+      var rmsAll = 0; for (i = 0; i < raw.length; i++) rmsAll += raw[i] * raw[i];
+      rmsAll = Math.sqrt(rmsAll / raw.length);
+      if (rmsAll < SILENCE_RMS) { el.heard.textContent = "(quiet)"; await sleep(200); continue; }
+      var t0 = performance.now(), phones;
+      try { phones = await infer(raw); }
+      catch (e) { setStatus("Listening error: " + (e && e.message ? e.message : e)); await sleep(500); continue; }
+      if (!listening) break;
+      var took = (performance.now() - t0) / 1000;
+      var seq = phones.map(function (x) { return x.p; });
+      el.heard.textContent = seq.slice(-30).join(" ");
+      var found = findMatches(S.ref, seq, S.thr / 100);
+      var speechDur = Math.max(0.6, refDur - 0.25), added = 0;
+      found.forEach(function (m) {
+        var t = winStart + phones[m.j - 1].ms / 1000;
+        for (var k = 0; k < counted.length; k++) if (Math.abs(counted[k] - t) < speechDur * 0.6) return;
+        counted.push(t); added++;
+      });
+      if (counted.length > 60) counted = counted.slice(-30);
+      if (added) bump(added, true);
+      if (took > winSec * 0.6) setStatus("This phone takes " + took.toFixed(1) + " s per pass, so counts may lag a little.");
+      else setStatus("Listening. Last pass took " + took.toFixed(1) + " s.");
+      await sleep(20);
+    }
+  }
+
+  /* expose pure helpers for testing outside the browser */
+  if (typeof window !== "undefined") window.__mantra = { findMatches: findMatches };
+
+  renderCount();
+  renderRef();
+  updateReady();
   autoLoadIfCached();
 })();
 </script>
