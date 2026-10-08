@@ -31,6 +31,7 @@
   h1 { font-size: 1.3rem; margin: 0; letter-spacing: -0.01em; }
   h2 { font-size: 1rem; margin: 0; }
   .sub { color: var(--muted); font-size: 0.88rem; margin: 2px 0 0; }
+  .ipa { font-family: "Charis SIL", "Gentium Plus", "Noto Sans", "DejaVu Sans", "Segoe UI", system-ui, sans-serif; }
   section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
   .cap { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
   label { font-size: 0.9rem; }
@@ -54,15 +55,30 @@
   .tabs button { background: transparent; color: var(--muted); }
   .tabs button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
   .status { font-size: 0.88rem; color: var(--muted); min-height: 1.4em; overflow-wrap: anywhere; }
+  .status.ok { color: var(--good); }
   .note { font-size: 0.82rem; color: var(--muted); }
   .meter { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; }
   .meter > i { display: block; height: 100%; width: 0; background: var(--good); transition: width 0.08s linear; }
+  progress { width: 100%; height: 8px; accent-color: var(--accent); }
 
+  .items { display: grid; gap: 12px; }
   .item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; min-width: 0; }
   .item .meta { font-size: 0.82rem; color: var(--muted); }
   .meta b { color: var(--fg); font-variant-numeric: tabular-nums; }
   .warnText { color: var(--warn); }
-  .items { display: grid; gap: 10px; }
+  .recs { display: grid; gap: 8px; }
+  .rec { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 6px; min-width: 0; }
+  .rec.off { opacity: 0.55; }
+  .rec .head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .rec .head label { display: flex; gap: 6px; align-items: center; color: var(--fg); font-weight: 600; }
+  .rec .head input { width: 18px; height: 18px; accent-color: var(--accent); }
+  .syms { display: flex; flex-wrap: wrap; gap: 6px; }
+  .sym { background: var(--chip); color: var(--fg); border-radius: 8px; padding: 6px 10px; font-size: 1.35rem; font-weight: 500; min-width: 42px; line-height: 1.3; }
+  .tag { font-size: 0.8rem; font-weight: 600; }
+  .tag.good { color: var(--good); } .tag.odd { color: var(--warn); }
+  .rec .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+  .rec .acts button { padding: 7px 10px; font-size: 0.85rem; flex: 0 0 auto; }
+  .typical { font-size: 0.9rem; color: var(--muted); overflow-wrap: anywhere; }
 
   .qcard { text-align: center; gap: 10px; }
   .qnum { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
@@ -71,31 +87,14 @@
   .badge { font-size: 2.6rem; line-height: 1; min-height: 1em; font-weight: 700; }
   .badge.ok { color: var(--good); }
   .badge.no { color: var(--bad); }
-  .detail { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .heard { font-size: 1.15rem; overflow-wrap: anywhere; min-height: 1.5em; }
+  .detail { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.3em; overflow-wrap: anywhere; }
   .summary { text-align: left; }
   .summary ul { margin: 6px 0 0; padding-left: 1.2em; }
   .switch { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
   .switch input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
   .val { font-variant-numeric: tabular-nums; font-weight: 600; }
   details summary { cursor: pointer; font-weight: 600; }
-  .ipa { font-family: "Charis SIL", "Gentium Plus", "Noto Sans", "DejaVu Sans", "Segoe UI", system-ui, sans-serif; }
-  .recs { display: grid; gap: 8px; margin-top: 8px; }
-  .rec { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 6px; min-width: 0; }
-  .rec.off { opacity: 0.55; }
-  .rec .head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .rec .head label { display: flex; gap: 6px; align-items: center; color: var(--fg); font-weight: 600; }
-  .rec .head input { width: 18px; height: 18px; accent-color: var(--accent); }
-  .rec .sounds { font-size: 1.25rem; line-height: 1.5; overflow-wrap: anywhere; word-spacing: 0.2em; }
-  .rec .tag { font-size: 0.8rem; font-weight: 600; }
-  .tag.good { color: var(--good); } .tag.odd { color: var(--warn); }
-  .rec .acts { display: flex; gap: 6px; flex-wrap: wrap; }
-  .rec .acts button { padding: 7px 10px; font-size: 0.85rem; flex: 0 0 auto; }
-  .viz { overflow-x: auto; border-radius: 8px; }
-  .vizin { position: relative; min-width: 100%; }
-  .vizin canvas { display: block; width: 100%; height: 84px; border-radius: 8px; background: #0b1020; }
-  .labs { position: relative; height: 1.7em; margin-top: 2px; }
-  .labs span { position: absolute; top: 0; transform: translateX(-50%); font-size: 1rem; white-space: nowrap; }
-  .typical { font-size: 0.85rem; color: var(--muted); }
   details > div { display: grid; gap: 12px; margin-top: 12px; }
 </style>
 </head>
@@ -103,8 +102,16 @@
 <main>
   <header>
     <h1>Answer Trainer</h1>
-    <p class="sub">Write questions, teach each answer in your own voice, then quiz yourself hands-free. Everything stays on this device.</p>
+    <p class="sub">Write questions, teach each answer in your own voice, then quiz yourself hands-free. Answers are matched by their phoneme symbols. Everything stays on this device.</p>
   </header>
+
+  <section aria-labelledby="mh">
+    <h2 id="mh">Phoneme model</h2>
+    <div class="status" id="pmStatus" role="status">Checking for a saved copy of the model...</div>
+    <progress id="pmProg" value="0" max="1" hidden></progress>
+    <button id="pmLoad" hidden>Download and load phoneme model</button>
+    <div class="note" id="pmNote">Recording and the quiz need this model. The first download is about 360 MB, so use Wi-Fi. After that it loads from this phone's storage.</div>
+  </section>
 
   <div class="tabs" role="tablist" aria-label="Mode">
     <button id="tabBuild" role="tab" aria-selected="true" aria-controls="buildPane">Build</button>
@@ -130,16 +137,7 @@
       <label for="newA">Answer (written, for your reference)</label>
       <input type="text" id="newA" placeholder="For example: Paris" autocomplete="off">
       <button id="addItem">Add question</button>
-      <div class="note">After adding, record the spoken answer three or more times so the app learns how you say it. Then open Review recordings to listen, check the sounds, and switch off any that went wrong.</div>
-    </section>
-
-    <section aria-labelledby="ph">
-      <h2 id="ph">Sound symbols</h2>
-      <div class="note">Each recording gets a picture of how it sounds. To also see its phoneme symbols on that picture, load the phoneme model once. It is a large download (about 360 MB), so use Wi-Fi. Answers are checked without it.</div>
-      <button id="pmLoad" class="secondary">Download and load phoneme model</button>
-      <progress id="pmProg" value="0" max="1" hidden style="width:100%;height:8px;accent-color:var(--accent)"></progress>
-      <div class="status" id="pmStatus" role="status">Phoneme model not loaded.</div>
-      <button id="pmAll" class="secondary" hidden>Show sounds for every recording</button>
+      <div class="note">After adding, record the spoken answer three or more times. Each recording is turned into phoneme symbols that you can check below. Tap a symbol to remove it, or switch a whole recording off.</div>
     </section>
 
     <section aria-labelledby="ih">
@@ -166,6 +164,7 @@
       <div class="qtext" id="qText"></div>
       <div class="phase" id="qPhase"></div>
       <div class="badge" id="qBadge" aria-hidden="true"></div>
+      <div class="heard ipa" id="qHeard"></div>
       <div class="detail" id="qDetail"></div>
       <div class="meter" aria-hidden="true"><i id="level2"></i></div>
       <div class="row">
@@ -187,13 +186,13 @@
           <select id="voice"></select>
         </div>
         <div>
-          <label for="rate">Speaking speed: <span class="val" id="rateVal">1.0</span></label>
+          <label for="rate">Speaking speed: <span class="val" id="rateVal">1.00</span></label>
           <input type="range" id="rate" min="0.6" max="1.5" step="0.05" value="1">
         </div>
         <div>
-          <label for="tolScale">Answer strictness: <span class="val" id="tolVal">normal</span></label>
-          <input type="range" id="tolScale" min="0.7" max="1.5" step="0.05" value="1">
-          <div class="note">Left is stricter, right is more forgiving. The detail line after each answer shows the numbers to tune against.</div>
+          <label for="strict">Answer strictness: <span class="val" id="strictVal">normal</span></label>
+          <input type="range" id="strict" min="-0.2" max="0.2" step="0.05" value="0">
+          <div class="note">Left accepts answers that are less similar to your recordings. Right needs a closer match. The line after each answer shows the numbers.</div>
         </div>
         <div>
           <label for="tries">Wrong tries before the answer is revealed</label>
@@ -217,101 +216,223 @@
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
   ["tabBuild","tabQuiz","buildPane","quizPane","deckSel","deckName","deckNew","deckRename","deckDel","newQ","newA","addItem",
-   "level","level2","buildStatus","items","quizSel","shuffle","showQ","qStart","qCard","qNum","qText","qPhase","qBadge","qDetail",
-   "qRepeat","qHear","qSkip","summary","pmLoad","pmProg","pmStatus","pmAll","voice","rate","rateVal","tolScale","tolVal","tries","wait"].forEach(function (k) { el[k] = $(k); });
+   "level","level2","buildStatus","items","quizSel","shuffle","showQ","qStart","qCard","qNum","qText","qPhase","qBadge","qHeard","qDetail",
+   "qRepeat","qHear","qSkip","summary","pmLoad","pmProg","pmStatus","pmNote","voice","rate","rateVal","strict","strictVal","tries","wait"].forEach(function (k) { el[k] = $(k); });
 
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   /* ---------- storage ---------- */
   var DB = { decks: [], cur: null };
-  var CFG = { voice: "", rate: 1, tolScale: 1, tries: 3, wait: 10, shuffle: true, showQ: true };
+  var CFG = { voice: "", rate: 1, strict: 0, tries: 3, wait: 10, shuffle: true, showQ: true };
   var saveWarned = false;
   function load() {
     try {
       var d = JSON.parse(localStorage.getItem("trainer.db") || "null"); if (d && d.decks) DB = d;
       var c = JSON.parse(localStorage.getItem("trainer.cfg") || "null"); if (c) for (var k in c) CFG[k] = c[k];
     } catch (e) {}
+    /* recordings from older versions have no phoneme symbols, so they cannot be used */
+    DB.decks.forEach(function (d) {
+      d.items.forEach(function (it) {
+        it.samples = (it.samples || []).filter(function (x) { return x.ph && x.ph.length; });
+        it.samples.forEach(function (x) { delete x.f; delete x.pms; if (!x.id) x.id = uid(); });
+      });
+    });
+    try { if (window.indexedDB) indexedDB.deleteDatabase("trainer-audio"); } catch (e) {}
     if (!DB.decks.length) { DB.decks.push({ id: uid(), name: "My questions", items: [] }); DB.cur = DB.decks[0].id; }
     if (!getDeck(DB.cur)) DB.cur = DB.decks[0].id;
+    save();
   }
   function save() {
     try { localStorage.setItem("trainer.db", JSON.stringify(DB)); }
-    catch (e) { if (!saveWarned) { saveWarned = true; setBuild("Could not save: browser storage is full or blocked. Delete some samples or sets."); } }
+    catch (e) { if (!saveWarned) { saveWarned = true; setBuild("Could not save: browser storage is full or blocked."); } }
   }
   function saveCfg() { try { localStorage.setItem("trainer.cfg", JSON.stringify(CFG)); } catch (e) {} }
   function getDeck(id) { for (var i = 0; i < DB.decks.length; i++) if (DB.decks[i].id === id) return DB.decks[i]; return null; }
   function curDeck() { return getDeck(DB.cur); }
   function setBuild(t) { el.buildStatus.textContent = t; }
 
-  /* ---------- sound features (log-mel cepstra, 20 ms frames) ---------- */
-  var FFT_N = 512, WIN = 400, HOP = 320, NMEL = 26, NCEP = 13, DIMS = 12;
-  var hamming = new Float32Array(WIN), melFB = [], dct = [], bitrev = new Uint16Array(FFT_N);
-  var twRe = new Float32Array(FFT_N / 2), twIm = new Float32Array(FFT_N / 2);
-  (function initDsp() {
-    var i, j, k;
-    for (i = 0; i < WIN; i++) hamming[i] = 0.54 - 0.46 * Math.cos(2 * Math.PI * i / (WIN - 1));
-    var bits = Math.log2(FFT_N);
-    for (i = 0; i < FFT_N; i++) { var r = 0; for (j = 0; j < bits; j++) if (i & (1 << j)) r |= 1 << (bits - 1 - j); bitrev[i] = r; }
-    for (i = 0; i < FFT_N / 2; i++) { twRe[i] = Math.cos(-2 * Math.PI * i / FFT_N); twIm[i] = Math.sin(-2 * Math.PI * i / FFT_N); }
-    function mel(f) { return 2595 * Math.log10(1 + f / 700); }
-    function imel(m) { return 700 * (Math.pow(10, m / 2595) - 1); }
-    var lo = mel(100), hi = mel(7000), pts = [];
-    for (i = 0; i < NMEL + 2; i++) pts.push(Math.floor((FFT_N + 1) * imel(lo + (hi - lo) * i / (NMEL + 1)) / SR));
-    for (i = 0; i < NMEL; i++) {
-      var f = new Float32Array(FFT_N / 2 + 1);
-      for (k = pts[i]; k < pts[i + 1]; k++) f[k] = (k - pts[i]) / Math.max(1, pts[i + 1] - pts[i]);
-      for (k = pts[i + 1]; k < pts[i + 2]; k++) f[k] = (pts[i + 2] - k) / Math.max(1, pts[i + 2] - pts[i + 1]);
-      melFB.push(f);
+  /* ---------- phoneme model ---------- */
+  var PM = {
+    model: "https://huggingface.co/zegt/uitspraak-onnx-int8/resolve/main/phone.int8.onnx",
+    vocab: [
+      "https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/vocab.json",
+      "https://huggingface.co/facebook/wav2vec2-lv-60-espeak-cv-ft/resolve/main/vocab.json"
+    ],
+    cache: "phoneme-listener-v1", session: null, tok: [], loading: false
+  };
+  var PM_SPECIAL = { "<pad>": 1, "<s>": 1, "</s>": 1, "<unk>": 1 };
+  var originOk = /^https?:$/.test(location.protocol) && location.origin !== "null" && window.top === window.self;
+  if (window.ort) {
+    ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
+  }
+  function half(h) {
+    var sg = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
+    if (e === 0) return sg * Math.pow(2, -14) * (f / 1024);
+    if (e === 31) return f ? NaN : sg * Infinity;
+    return sg * Math.pow(2, e - 15) * (1 + f / 1024);
+  }
+  async function pmFetch(url, onProgress) {
+    var cache = null;
+    try { cache = await caches.open(PM.cache); } catch (e) {}
+    if (cache) { var hit = await cache.match(url); if (hit) { onProgress(1, 1, true); return await hit.arrayBuffer(); } }
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("Download failed (" + res.status + ")");
+    var total = parseInt(res.headers.get("content-length") || "0", 10), reader = res.body.getReader(), parts = [], got = 0;
+    for (;;) { var r = await reader.read(); if (r.done) break; parts.push(r.value); got += r.value.length; onProgress(got, total, false); }
+    var buf = new Uint8Array(got), off = 0;
+    for (var i = 0; i < parts.length; i++) { buf.set(parts[i], off); off += parts[i].length; }
+    parts = null;
+    if (cache) { try { await cache.put(url, new Response(buf.buffer.slice(0))); } catch (e) {} }
+    return buf.buffer;
+  }
+  async function loadModel() {
+    if (PM.session || PM.loading) return;
+    if (!window.ort) { el.pmStatus.textContent = "The ONNX runtime did not load. Check your connection and reload."; el.pmLoad.hidden = false; return; }
+    PM.loading = true; el.pmLoad.disabled = true; el.pmLoad.hidden = true; el.pmProg.hidden = false; el.pmProg.value = 0;
+    try {
+      el.pmStatus.textContent = "Loading vocabulary...";
+      var vocab = null, lastErr = "";
+      for (var vi = 0; vi < PM.vocab.length && !vocab; vi++) {
+        try { var vr = await fetch(PM.vocab[vi]); if (!vr.ok) { lastErr = "status " + vr.status; continue; } vocab = await vr.json(); }
+        catch (ve) { lastErr = ve.message || String(ve); }
+      }
+      if (!vocab) throw new Error("Vocabulary download failed (" + lastErr + ")");
+      PM.tok = []; Object.keys(vocab).forEach(function (t) { PM.tok[vocab[t]] = t; });
+      var buf = await pmFetch(PM.model, function (got, total, cached) {
+        if (cached) { el.pmStatus.textContent = "Reading the model from this phone's storage..."; el.pmProg.removeAttribute("value"); return; }
+        if (total) { el.pmProg.value = got / total; el.pmStatus.textContent = "Downloading: " + Math.round(got / 1048576) + " of " + Math.round(total / 1048576) + " MB"; }
+        else { el.pmProg.removeAttribute("value"); el.pmStatus.textContent = "Downloading: " + Math.round(got / 1048576) + " MB"; }
+      });
+      el.pmStatus.textContent = "Starting the model (this can take a little while)...";
+      el.pmProg.removeAttribute("value");
+      PM.session = await ort.InferenceSession.create(buf, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+      buf = null;
+      el.pmStatus.textContent = "Phoneme model ready.";
+      el.pmStatus.classList.add("ok");
+      el.pmNote.hidden = true;
+    } catch (e) {
+      PM.session = null;
+      var em = e && e.message ? e.message : String(e);
+      if (!originOk || /fetch/i.test(em)) em += ". Open this page from an https:// link in Chrome.";
+      el.pmStatus.textContent = "Could not load: " + em;
+      el.pmLoad.hidden = false; el.pmLoad.textContent = "Try again";
+    } finally {
+      PM.loading = false; el.pmLoad.disabled = false; el.pmProg.hidden = true;
+      renderItems(); updateQuizButton();
     }
-    for (i = 0; i < NCEP; i++) {
-      var row = new Float32Array(NMEL);
-      for (j = 0; j < NMEL; j++) row[j] = Math.cos(Math.PI * i * (j + 0.5) / NMEL);
-      dct.push(row);
+  }
+  el.pmLoad.addEventListener("click", loadModel);
+  (async function startup() {
+    var cached = false;
+    try { if (window.caches) { var c = await caches.open(PM.cache); cached = !!(await c.match(PM.model)); } } catch (e) {}
+    if (cached) loadModel();
+    else {
+      el.pmStatus.textContent = "Phoneme model not loaded.";
+      el.pmLoad.hidden = false;
+      if (!originOk) el.pmStatus.textContent = "This looks like an in-app preview, which blocks downloads and the microphone. Open this page from an https:// link in Chrome.";
     }
   })();
-  var fRe = new Float32Array(FFT_N), fIm = new Float32Array(FFT_N), frameBuf = new Float32Array(WIN), melE = new Float32Array(NMEL);
-  function frameFeature() {
-    var i, k;
-    fRe.fill(0); fIm.fill(0);
-    for (i = 0; i < WIN; i++) {
-      var x = frameBuf[i] - (i ? 0.97 * frameBuf[i - 1] : 0);
-      fRe[bitrev[i]] = x * hamming[i];
+
+  async function inferPhones(raw) {
+    var d = new Float32Array(raw.length), mean = 0, i;
+    for (i = 0; i < raw.length; i++) mean += raw[i];
+    mean /= raw.length;
+    var v = 0; for (i = 0; i < raw.length; i++) { var x = raw[i] - mean; v += x * x; }
+    var sd = Math.sqrt(v / raw.length + 1e-7);
+    for (i = 0; i < raw.length; i++) d[i] = (raw[i] - mean) / sd;
+    var feeds = {}; feeds[PM.session.inputNames[0]] = new ort.Tensor("float32", d, [1, d.length]);
+    var res = await PM.session.run(feeds);
+    var out = res[PM.session.outputNames[0]], dims = out.dims, V = dims[dims.length - 1], T = dims[dims.length - 2], data = out.data;
+    if (out.type === "float16" || data instanceof Uint16Array) { var f = new Float32Array(data.length); for (i = 0; i < data.length; i++) f[i] = half(data[i]); data = f; }
+    var ph = [], prev = -1;
+    for (var t = 0; t < T; t++) {
+      var best = 0, bv = -Infinity, base = t * V;
+      for (var k = 0; k < V; k++) { var val = data[base + k]; if (val > bv) { bv = val; best = k; } }
+      if (best !== prev) { var tok = PM.tok[best]; if (tok !== undefined && !PM_SPECIAL[tok]) ph.push(tok); }
+      prev = best;
     }
-    for (var size = 2; size <= FFT_N; size <<= 1) {
-      var half = size >> 1, step = FFT_N / size;
-      for (var st = 0; st < FFT_N; st += size) {
-        for (k = 0; k < half; k++) {
-          var wr = twRe[k * step], wi = twIm[k * step], a = st + k, b = a + half;
-          var tr = fRe[b] * wr - fIm[b] * wi, ti = fRe[b] * wi + fIm[b] * wr;
-          fRe[b] = fRe[a] - tr; fIm[b] = fIm[a] - ti; fRe[a] += tr; fIm[a] += ti;
-        }
-      }
-    }
-    var nb = FFT_N / 2 + 1, pw = new Float32Array(nb), tot = 0;
-    for (k = 0; k < nb; k++) pw[k] = fRe[k] * fRe[k] + fIm[k] * fIm[k];
-    for (i = 0; i < NMEL; i++) {
-      var e = 0, fb = melFB[i];
-      for (k = 0; k < nb; k++) if (fb[k]) e += fb[k] * pw[k];
-      melE[i] = Math.log(Math.max(e, 1e-8)); tot += e;
-    }
-    var out = new Float32Array(NCEP);
-    out[0] = Math.log(Math.max(tot, 1e-8));
-    for (i = 1; i < NCEP; i++) { var s2 = 0, row2 = dct[i]; for (var j = 0; j < NMEL; j++) s2 += row2[j] * melE[j]; out[i] = s2; }
-    return out;
+    return ph;
   }
-  function pool(a, b) { var o = new Float32Array(NCEP); for (var i = 0; i < NCEP; i++) o[i] = (a[i] + b[i]) / 2; return o; }
+
+  /* ---------- comparing phoneme sequences ---------- */
+  function baseSym(p) { return p.replace(/[ːˑʰʲʷ̩̯̃]/g, ""); }
+  function wdist(a, b) {
+    var m = a.length, n = b.length, prev = new Array(n + 1), cur = new Array(n + 1), i, j;
+    for (j = 0; j <= n; j++) prev[j] = j;
+    for (i = 1; i <= m; i++) {
+      cur[0] = i;
+      for (j = 1; j <= n; j++) {
+        var sc = a[i - 1] === b[j - 1] ? 0 : (baseSym(a[i - 1]) === baseSym(b[j - 1]) ? 0.4 : 1);
+        cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + sc);
+      }
+      var t = prev; prev = cur; cur = t;
+    }
+    return prev[n];
+  }
+  function sim(a, b) {
+    var m = Math.max(a.length, b.length);
+    if (!m) return 0;
+    return Math.max(0, 1 - wdist(a, b) / m);
+  }
+  function activeSamples(item) { return item.samples.filter(function (x) { return x.on !== false && x.ph && x.ph.length; }); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function itemThreshold(item) {
+    var s = activeSamples(item), base = 0.7;
+    if (s.length >= 2) {
+      var worst = 1;
+      s.forEach(function (x, i) {
+        var best = 0;
+        s.forEach(function (y, j) { if (i !== j) best = Math.max(best, sim(x.ph, y.ph)); });
+        worst = Math.min(worst, best);
+      });
+      base = clamp(worst - 0.1, 0.5, 0.8);
+    }
+    return clamp(base + CFG.strict, 0.35, 0.95);
+  }
+  function evaluate(item, deck, heard) {
+    var own = 0, other = -1, nearest = null;
+    activeSamples(item).forEach(function (s) { var v = sim(heard, s.ph); if (v > own) { own = v; nearest = s.ph; } });
+    deck.items.forEach(function (o) {
+      if (o === item) return;
+      activeSamples(o).forEach(function (s) { other = Math.max(other, sim(heard, s.ph)); });
+    });
+    var tol = itemThreshold(item);
+    return { ok: heard.length > 0 && own >= tol && (other < 0 || own > other), own: own, other: other, tol: tol, nearest: nearest };
+  }
+  function analyse(item) {
+    var S = item.samples, rows = S.map(function () { return { sim: null, diff: null, outlier: false, typical: false }; });
+    var act = []; S.forEach(function (x, i) { if (x.on !== false) act.push(i); });
+    S.forEach(function (x, i) {
+      var best = -1;
+      act.forEach(function (j) { if (j !== i) best = Math.max(best, sim(x.ph, S[j].ph)); });
+      if (best >= 0) rows[i].sim = best;
+    });
+    if (act.length >= 3) {
+      var sims = act.map(function (i) { return rows[i].sim; }).sort(function (p, q) { return p - q; });
+      var med = sims[Math.floor(sims.length / 2)];
+      act.forEach(function (i) { rows[i].outlier = rows[i].sim < med - 0.25 && rows[i].sim < 0.6; });
+    }
+    var typ = null;
+    if (act.length) {
+      var bestSum = Infinity;
+      act.forEach(function (i) {
+        var sum = 0; act.forEach(function (j) { if (i !== j) sum += wdist(S[i].ph, S[j].ph); });
+        if (sum < bestSum) { bestSum = sum; typ = i; }
+      });
+      S.forEach(function (x, i) { rows[i].diff = Math.round(wdist(x.ph, S[typ].ph)); });
+      rows[typ].typical = true;
+    }
+    return { rows: rows, typ: typ };
+  }
 
   /* ---------- microphone ---------- */
   var ring = new Float32Array(RB), total = 0, frameNext = 0;
   var actx = null, stream = null, proc = null, srcNode = null, sink = null, phase = 0, lastS = 0;
   var micOn = false;
 
-  function pushSamples(arr, n) {
-    var sum = 0, i;
-    for (i = 0; i < n; i++) { ring[(total + i) % RB] = arr[i]; sum += arr[i] * arr[i]; }
-    total += n;
-  }
+  function pushSamples(arr, n) { for (var i = 0; i < n; i++) ring[(total + i) % RB] = arr[i]; total += n; }
   async function startMic() {
     if (micOn) return;
     stream = await navigator.mediaDevices.getUserMedia({
@@ -351,142 +472,101 @@
   function micError(e) {
     return "Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone.";
   }
+  function setLevel(v) {
+    var w = Math.max(0, Math.min(100, v * 100)) + "%";
+    el.level.style.width = w; el.level2.style.width = w;
+  }
+
+  /* ---------- finding where speech starts and stops (loudness only) ---------- */
+  var WIN = 400, HOP = 320;
+  var frameBuf = new Float32Array(WIN);
+  function frameEnergy() {
+    var s = 0;
+    for (var i = 1; i < WIN; i++) { var x = frameBuf[i] - 0.97 * frameBuf[i - 1]; s += x * x; }
+    return Math.log(Math.max(s, 1e-8));
+  }
   function pullFrames() {
     var out = [], i, minStart = Math.max(0, total - RB + WIN);
     if (frameNext * HOP < minStart) frameNext = Math.ceil(minStart / HOP);
     while (frameNext * HOP + WIN <= total) {
       var st = frameNext * HOP;
       for (i = 0; i < WIN; i++) frameBuf[i] = ring[(st + i) % RB];
-      var ft = frameFeature(); ft.idx = frameNext; out.push(ft); frameNext++;
+      out.push({ e: frameEnergy(), idx: frameNext }); frameNext++;
     }
     return out;
   }
-  function setLevel(v) {
-    var w = Math.max(0, Math.min(100, v * 100)) + "%";
-    el.level.style.width = w; el.level2.style.width = w;
-  }
-
-  /* ---------- speech detection ---------- */
-  var ON = 2.4, OFF = 1.8, END_QUIET = 30;
-  var floorE = null;
+  var ON = 2.4, END_QUIET = 28, MAX_FRAMES = 300, floorE = null;
+  function offLevel(floor, pk) { return floor + Math.max(1.5, 0.3 * (pk - floor)); }
   function makeEndpointer(floor) {
-    var s = { floor: floor, inSpeech: false, hot: 0, quiet: 0, speech: 0, pre: [], frames: [], done: false, ok: false, maxFrames: 400 };
+    var s = { floor: floor, pk: floor, inSpeech: false, hot: 0, quiet: 0, speech: 0, pre: [], frames: [], done: false, ok: false };
+    function finish() {
+      if (s.quiet > 4) s.frames.length -= (s.quiet - 4);
+      s.done = true; s.ok = s.speech >= 10;
+    }
     s.push = function (f) {
       if (s.done) return;
-      var e = f[0];
+      var e = f.e;
       if (!s.inSpeech) {
         s.pre.push(f); if (s.pre.length > 15) s.pre.shift();
         if (e > s.floor + ON) {
           s.hot++;
-          if (s.hot >= 3) { s.inSpeech = true; s.frames = s.pre.slice(); s.speech = s.hot; s.quiet = 0; }
+          if (s.hot >= 3) { s.inSpeech = true; s.frames = s.pre.slice(); s.speech = s.hot; s.quiet = 0; s.pk = e; }
         } else { s.hot = 0; if (e < s.floor + 1.0) s.floor = s.floor * 0.98 + e * 0.02; }
       } else {
         s.frames.push(f);
-        if (e > s.floor + OFF) { s.quiet = 0; s.speech++; } else s.quiet++;
-        if (s.quiet >= END_QUIET || s.frames.length >= s.maxFrames) {
-          if (s.quiet > 4) s.frames.length -= (s.quiet - 4);
-          s.done = true; s.ok = s.speech >= 10;
-        }
+        s.pk = Math.max(s.pk * 0.995, e);
+        if (e > offLevel(s.floor, s.pk)) { s.quiet = 0; s.speech++; } else s.quiet++;
+        if (s.quiet >= END_QUIET || s.frames.length >= MAX_FRAMES) finish();
       }
     };
+    s.stopNow = function () { if (s.inSpeech && !s.done) finish(); };
     return s;
   }
   async function calibrate() {
     frameNext = Math.ceil(total / HOP);
+    await sleep(150);
+    frameNext = Math.ceil(total / HOP);
     var es = [], t0 = performance.now();
-    while (performance.now() - t0 < 450) {
+    while (performance.now() - t0 < 500) {
       await sleep(30);
-      pullFrames().forEach(function (f) { es.push(f[0]); });
+      pullFrames().forEach(function (f) { es.push(f.e); });
     }
-    if (es.length < 5) { floorE = floorE === null ? -5 : floorE; return; }
+    if (es.length < 5) { if (floorE === null) floorE = -5; return; }
     es.sort(function (a, b) { return a - b; });
     floorE = es[Math.floor(es.length * 0.3)];
   }
-  var abortListen = false;
-  /* resolves { frames, floor } on speech, { timeout:true }, or { cancelled:true } */
+  var abortListen = false, manualStop = false;
+  /* resolves { audio, dur } with the raw speech, or { tooShort }, { timeout }, { cancelled } */
   async function listenOnce(timeoutMs) {
-    abortListen = false;
+    abortListen = false; manualStop = false;
     frameNext = Math.ceil(total / HOP);
     var ep = makeEndpointer(floorE), t0 = performance.now();
     while (!abortListen) {
       await sleep(30);
+      if (manualStop) { ep.stopNow(); if (!ep.done) { setLevel(0); return { cancelled: true }; } }
       var nf = pullFrames();
       for (var i = 0; i < nf.length; i++) {
         ep.push(nf[i]);
-        setLevel((nf[i][0] - ep.floor) / 7);
+        setLevel((nf[i].e - ep.floor) / 7);
         if (ep.done) break;
       }
-      if (ep.done) { floorE = ep.floor; setLevel(0); return ep.ok ? { frames: ep.frames, floor: ep.floor } : { tooShort: true }; }
+      if (ep.done) {
+        floorE = ep.floor; setLevel(0);
+        if (!ep.ok) return { tooShort: true };
+        var a = 0, b = ep.frames.length - 1, thr = offLevel(ep.floor, ep.pk) - 0.2;
+        while (a < b && ep.frames[a].e < thr) a++;
+        while (b > a && ep.frames[b].e < thr) b--;
+        var s0 = Math.max(0, ep.frames[Math.max(0, a - 6)].idx * HOP, total - RB + WIN);
+        var s1 = Math.min(total, ep.frames[Math.min(ep.frames.length - 1, b + 6)].idx * HOP + WIN);
+        if (s1 - s0 < SR * 0.25) return { tooShort: true };
+        var raw = new Float32Array(s1 - s0);
+        for (var k = 0; k < raw.length; k++) raw[k] = ring[(s0 + k) % RB];
+        return { audio: raw, dur: raw.length / SR };
+      }
       if (!ep.inSpeech && performance.now() - t0 > timeoutMs) { floorE = ep.floor; setLevel(0); return { timeout: true }; }
     }
     setLevel(0);
     return { cancelled: true };
-  }
-
-  function prepareUtterance(frames, floor) {
-    var a = 0, b = frames.length - 1, i, d;
-    while (a < frames.length && frames[a][0] < floor + 1.8) a++;
-    while (b > a && frames[b][0] < floor + 1.8) b--;
-    a = Math.max(0, a - 2); b = Math.min(frames.length - 1, b + 2);
-    var seg = frames.slice(a, b + 1);
-    if (seg.length < 8) return null;
-    var pf = [];
-    for (i = 0; i + 1 < seg.length; i += 2) pf.push(pool(seg[i], seg[i + 1]));
-    if (pf.length < 5) return null;
-    var mean = new Array(DIMS).fill(0), sd = new Array(DIMS).fill(0);
-    pf.forEach(function (f) { for (d = 0; d < DIMS; d++) mean[d] += f[d + 1]; });
-    for (d = 0; d < DIMS; d++) mean[d] /= pf.length;
-    pf.forEach(function (f) { for (d = 0; d < DIMS; d++) { var x = f[d + 1] - mean[d]; sd[d] += x * x; } });
-    for (d = 0; d < DIMS; d++) sd[d] = Math.sqrt(sd[d] / pf.length) + 1e-3;
-    var norm = pf.map(function (f) { var r = []; for (var q = 0; q < DIMS; q++) r.push(Math.round(((f[q + 1] - mean[q]) / sd[q]) * 100) / 100); return r; });
-    return { f: norm, dur: pf.length * 0.04, a: a, b: b };
-  }
-
-  /* ---------- comparing two utterances (dynamic time warping) ---------- */
-  function dtwFull(A, B) {
-    var n = A.length, m = B.length, i, j, pen = 0.1;
-    if (!n || !m) return 9;
-    var Dp = new Float32Array(m), Lp = new Float32Array(m), Dc = new Float32Array(m), Lc = new Float32Array(m);
-    function dist(r, x) { var s2 = 0; for (var q = 0; q < DIMS; q++) { var t = r[q] - x[q]; s2 += t * t; } return Math.sqrt(s2 / DIMS); }
-    Dp[0] = dist(A[0], B[0]); Lp[0] = 1;
-    for (j = 1; j < m; j++) { Dp[j] = Dp[j - 1] + dist(A[0], B[j]) + pen; Lp[j] = Lp[j - 1] + 1; }
-    for (i = 1; i < n; i++) {
-      Dc[0] = Dp[0] + dist(A[i], B[0]) + pen; Lc[0] = Lp[0] + 1;
-      for (j = 1; j < m; j++) {
-        var d = dist(A[i], B[j]);
-        var bd = Dp[j - 1] + d, bl = Lp[j - 1] + 1;
-        var v = Dp[j] + d + pen; if (v < bd) { bd = v; bl = Lp[j] + 1; }
-        var h = Dc[j - 1] + d + pen; if (h < bd) { bd = h; bl = Lc[j - 1] + 1; }
-        Dc[j] = bd; Lc[j] = bl;
-      }
-      var t1 = Dp; Dp = Dc; Dc = t1; t1 = Lp; Lp = Lc; Lc = t1;
-    }
-    return Dp[m - 1] / Lp[m - 1] + 0.3 * Math.abs(Math.log(n / m));
-  }
-
-  var DEFAULT_TOL = 0.9;
-  function activeSamples(item) { return item.samples.filter(function (x) { return x.on !== false; }); }
-  function itemTol(item) {
-    var s = activeSamples(item);
-    if (s.length < 2) return DEFAULT_TOL;
-    var worst = 0;
-    for (var i = 0; i < s.length; i++) {
-      var best = 9;
-      for (var j = 0; j < s.length; j++) if (i !== j) best = Math.min(best, dtwFull(s[i].f, s[j].f));
-      worst = Math.max(worst, best);
-    }
-    return Math.max(0.7, Math.min(1.3, worst * 1.5));
-  }
-  function evaluate(item, deck, utt) {
-    var own = 9, other = Infinity;
-    activeSamples(item).forEach(function (s) { own = Math.min(own, dtwFull(utt.f, s.f)); });
-    deck.items.forEach(function (o) {
-      if (o === item) return;
-      activeSamples(o).forEach(function (s) { other = Math.min(other, dtwFull(utt.f, s.f)); });
-    });
-    var tol = itemTol(item) * CFG.tolScale;
-    var ok = own <= tol && (other === Infinity || own <= other * 0.97);
-    return { ok: ok, own: own, other: other, tol: tol };
   }
 
   /* ---------- sounds and speech ---------- */
@@ -554,258 +634,20 @@
     });
     el.deckName.value = curDeck().name;
   }
-  /* ----- saved audio (IndexedDB) ----- */
-  var idbP = null;
-  function idb() {
-    if (idbP) return idbP;
-    idbP = new Promise(function (res, rej) {
-      try {
-        var r = indexedDB.open("trainer-audio", 1);
-        r.onupgradeneeded = function () { r.result.createObjectStore("a"); };
-        r.onsuccess = function () { res(r.result); };
-        r.onerror = function () { rej(r.error); };
-      } catch (e) { rej(e); }
+
+  function symbolChips(item, smp) {
+    var box = document.createElement("div"); box.className = "syms ipa";
+    smp.ph.forEach(function (p, pi) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "sym secondary"; b.textContent = p;
+      b.setAttribute("aria-label", "Remove sound " + p + " from this recording");
+      b.addEventListener("click", function () {
+        smp.ph.splice(pi, 1);
+        if (!smp.ph.length) { item.samples.splice(item.samples.indexOf(smp), 1); }
+        save(); renderItems();
+      });
+      box.appendChild(b);
     });
-    return idbP;
-  }
-  function idbPut(k, v) {
-    return idb().then(function (db) { return new Promise(function (res, rej) { var tx = db.transaction("a", "readwrite"); tx.objectStore("a").put(v, k); tx.oncomplete = res; tx.onerror = function () { rej(tx.error); }; }); }).catch(function () {});
-  }
-  function idbGet(k) {
-    return idb().then(function (db) { return new Promise(function (res, rej) { var r = db.transaction("a").objectStore("a").get(k); r.onsuccess = function () { res(r.result || null); }; r.onerror = function () { rej(r.error); }; }); }).catch(function () { return null; });
-  }
-  function idbDel(k) {
-    return idb().then(function (db) { return new Promise(function (res) { var tx = db.transaction("a", "readwrite"); tx.objectStore("a").delete(k); tx.oncomplete = res; tx.onerror = res; }); }).catch(function () {});
-  }
-  function dropAudio(samples) { samples.forEach(function (x) { if (x.id) idbDel(x.id); }); }
-  function toInt16(raw) {
-    var o = new Int16Array(raw.length);
-    for (var i = 0; i < raw.length; i++) { var v = Math.max(-1, Math.min(1, raw[i])); o[i] = Math.round(v * 32767); }
-    return o;
-  }
-  function fromInt16(buf) {
-    var i16 = new Int16Array(buf), o = new Float32Array(i16.length);
-    for (var i = 0; i < i16.length; i++) o[i] = i16[i] / 32767;
-    return o;
-  }
-  function playRaw(f32) {
-    try {
-      var c = beepCtxGet(), b = c.createBuffer(1, f32.length, SR);
-      b.getChannelData(0).set(f32);
-      var src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start();
-    } catch (e) {}
-  }
-
-  /* ----- optional phoneme model ----- */
-  var PM = {
-    model: "https://huggingface.co/zegt/uitspraak-onnx-int8/resolve/main/phone.int8.onnx",
-    vocab: [
-      "https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/vocab.json",
-      "https://huggingface.co/facebook/wav2vec2-lv-60-espeak-cv-ft/resolve/main/vocab.json"
-    ],
-    cache: "phoneme-listener-v1", session: null, tok: []
-  };
-  var PM_SPECIAL = { "<pad>": 1, "<s>": 1, "</s>": 1, "<unk>": 1 };
-  if (window.ort) {
-    ort.env.wasm.wasmPaths = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
-    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
-  } else { el.pmLoad.disabled = true; el.pmStatus.textContent = "The ONNX runtime did not load. Check your connection and reload."; }
-  function half(h) {
-    var sg = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
-    if (e === 0) return sg * Math.pow(2, -14) * (f / 1024);
-    if (e === 31) return f ? NaN : sg * Infinity;
-    return sg * Math.pow(2, e - 15) * (1 + f / 1024);
-  }
-  async function pmFetch(url, onProgress) {
-    var cache = null;
-    try { cache = await caches.open(PM.cache); } catch (e) {}
-    if (cache) { var hit = await cache.match(url); if (hit) { onProgress(1, 1, true); return await hit.arrayBuffer(); } }
-    var res = await fetch(url);
-    if (!res.ok) throw new Error("Download failed (" + res.status + ")");
-    var total = parseInt(res.headers.get("content-length") || "0", 10), reader = res.body.getReader(), parts = [], got = 0;
-    for (;;) { var r = await reader.read(); if (r.done) break; parts.push(r.value); got += r.value.length; onProgress(got, total, false); }
-    var buf = new Uint8Array(got), off = 0;
-    for (var i = 0; i < parts.length; i++) { buf.set(parts[i], off); off += parts[i].length; }
-    parts = null;
-    if (cache) { try { await cache.put(url, new Response(buf.buffer.slice(0))); } catch (e) {} }
-    return buf.buffer;
-  }
-  el.pmLoad.addEventListener("click", async function () {
-    el.pmLoad.disabled = true; el.pmProg.hidden = false; el.pmProg.value = 0;
-    try {
-      el.pmStatus.textContent = "Loading vocabulary...";
-      var vocab = null, lastErr = "";
-      for (var vi = 0; vi < PM.vocab.length && !vocab; vi++) {
-        try { var vr = await fetch(PM.vocab[vi]); if (!vr.ok) { lastErr = "status " + vr.status; continue; } vocab = await vr.json(); }
-        catch (ve) { lastErr = ve.message || String(ve); }
-      }
-      if (!vocab) throw new Error("Vocabulary download failed (" + lastErr + ")");
-      PM.tok = []; Object.keys(vocab).forEach(function (t) { PM.tok[vocab[t]] = t; });
-      var buf = await pmFetch(PM.model, function (got, total, cached) {
-        if (cached) { el.pmStatus.textContent = "Reading model from local cache..."; el.pmProg.removeAttribute("value"); return; }
-        if (total) { el.pmProg.value = got / total; el.pmStatus.textContent = "Downloading: " + Math.round(got / 1048576) + " of " + Math.round(total / 1048576) + " MB"; }
-        else { el.pmProg.removeAttribute("value"); el.pmStatus.textContent = "Downloading: " + Math.round(got / 1048576) + " MB"; }
-      });
-      el.pmStatus.textContent = "Starting the model (this can take a little while)...";
-      el.pmProg.removeAttribute("value");
-      PM.session = await ort.InferenceSession.create(buf, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
-      buf = null;
-      el.pmStatus.textContent = "Phoneme model ready. New recordings will show their sounds. For older ones, tap the button below.";
-      el.pmAll.hidden = false;
-      renderItems();
-    } catch (e) {
-      PM.session = null;
-      var em = e && e.message ? e.message : String(e);
-      if (/fetch/i.test(em)) em += ". Open this page from an https:// link in Chrome.";
-      el.pmStatus.textContent = "Could not load: " + em;
-    } finally { el.pmProg.hidden = true; el.pmLoad.disabled = false; }
-  });
-  el.pmAll.addEventListener("click", async function () {
-    el.pmAll.disabled = true;
-    var todo = [];
-    DB.decks.forEach(function (d) { d.items.forEach(function (it) { it.samples.forEach(function (sm) { if (sm.id && !(sm.ph && sm.pms)) todo.push([it, sm]); }); }); });
-    for (var z = 0; z < todo.length; z++) {
-      el.pmStatus.textContent = "Working out sounds: " + (z + 1) + " of " + todo.length + "...";
-      await computeSounds(todo[z][0], todo[z][1]);
-    }
-    el.pmStatus.textContent = todo.length ? "Done. Open Review recordings on a question to see the symbols on each picture." : "Every recording already has its sounds.";
-    el.pmAll.disabled = false; renderItems();
-  });
-  async function inferPhones(raw) {
-    var d = new Float32Array(raw.length), mean = 0, i;
-    for (i = 0; i < raw.length; i++) mean += raw[i];
-    mean /= raw.length;
-    var v = 0; for (i = 0; i < raw.length; i++) { var x = raw[i] - mean; v += x * x; }
-    var sd = Math.sqrt(v / raw.length + 1e-7);
-    for (i = 0; i < raw.length; i++) d[i] = (raw[i] - mean) / sd;
-    var feeds = {}; feeds[PM.session.inputNames[0]] = new ort.Tensor("float32", d, [1, d.length]);
-    var res = await PM.session.run(feeds);
-    var out = res[PM.session.outputNames[0]], dims = out.dims, V = dims[dims.length - 1], T = dims[dims.length - 2], data = out.data;
-    if (out.type === "float16" || data instanceof Uint16Array) { var f = new Float32Array(data.length); for (i = 0; i < data.length; i++) f[i] = half(data[i]); data = f; }
-    var ph = [], prev = -1;
-    for (var t = 0; t < T; t++) {
-      var best = 0, bv = -Infinity, base = t * V;
-      for (var k = 0; k < V; k++) { var val = data[base + k]; if (val > bv) { bv = val; best = k; } }
-      if (best !== prev) { var tok = PM.tok[best]; if (tok !== undefined && !PM_SPECIAL[tok]) ph.push({ p: tok, ms: t * 20 }); }
-      prev = best;
-    }
-    return ph;
-  }
-  (async function labelCached() {
-    try {
-      if (!window.caches) return;
-      var c = await caches.open(PM.cache);
-      if (await c.match(PM.model)) el.pmLoad.textContent = "Load phoneme model (already downloaded)";
-    } catch (e) {}
-  })();
-
-
-  /* ----- picture of a recording: mel spectrogram with phoneme labels ----- */
-  function melSpectrogram(raw) {
-    var out = [], n = Math.floor((raw.length - WIN) / HOP) + 1;
-    for (var k = 0; k < n; k++) {
-      for (var i = 0; i < WIN; i++) frameBuf[i] = raw[k * HOP + i];
-      frameFeature();
-      out.push(Float32Array.from(melE));
-    }
-    return out;
-  }
-  var STOPS = [[0, 11, 16, 32], [0.35, 29, 78, 137], [0.65, 242, 165, 65], [1, 255, 246, 214]];
-  function colorAt(t) {
-    t = Math.max(0, Math.min(1, t));
-    for (var i = 1; i < STOPS.length; i++) {
-      if (t <= STOPS[i][0]) {
-        var a = STOPS[i - 1], b = STOPS[i], u = (t - a[0]) / (b[0] - a[0]);
-        return [a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u];
-      }
-    }
-    return [255, 246, 214];
-  }
-  function paintSpectrogram(cv, sp) {
-    var nF = sp.length, ctx = cv.getContext("2d");
-    cv.width = nF; cv.height = NMEL;
-    if (!ctx) return;
-    var all = [], k, m;
-    sp.forEach(function (fr) { for (m = 0; m < NMEL; m++) all.push(fr[m]); });
-    all.sort(function (a, b) { return a - b; });
-    var lo = all[Math.floor(all.length * 0.05)], hi = all[Math.floor(all.length * 0.995)];
-    if (hi - lo < 1e-3) hi = lo + 1;
-    var img = ctx.createImageData(nF, NMEL);
-    for (k = 0; k < nF; k++) for (m = 0; m < NMEL; m++) {
-      var c = colorAt((sp[k][m] - lo) / (hi - lo)), y = NMEL - 1 - m, o = (y * nF + k) * 4;
-      img.data[o] = c[0]; img.data[o + 1] = c[1]; img.data[o + 2] = c[2]; img.data[o + 3] = 255;
-    }
-    ctx.putImageData(img, 0, 0);
-  }
-  async function drawRec(smp, wrap) {
-    var buf = await idbGet(smp.id);
-    if (!buf) { wrap.className = "note"; wrap.textContent = "No picture: this recording has no saved audio (it was made before audio saving was added, or storage is blocked). Record it again."; return; }
-    var raw = fromInt16(buf);
-    if (raw.length < WIN * 2) { wrap.className = "note"; wrap.textContent = "Recording is too short to draw."; return; }
-    var sp = melSpectrogram(raw), secs = raw.length / SR;
-    var inner = document.createElement("div"); inner.className = "vizin"; inner.style.width = Math.max(280, Math.round(secs * 240)) + "px";
-    var cv = document.createElement("canvas"); cv.setAttribute("role", "img"); cv.setAttribute("aria-label", "Sound picture of recording, time left to right, pitch bottom to top");
-    paintSpectrogram(cv, sp);
-    inner.appendChild(cv);
-    if (smp.ph && smp.pms && smp.pms.length === smp.ph.length) {
-      var labs = document.createElement("div"); labs.className = "labs ipa";
-      smp.ph.forEach(function (p, i) {
-        var sp2 = document.createElement("span"); sp2.textContent = p;
-        sp2.style.left = Math.min(98, Math.max(2, (smp.pms[i] + 10) / (secs * 1000) * 100)) + "%";
-        labs.appendChild(sp2);
-      });
-      inner.appendChild(labs);
-    }
-    wrap.className = "viz"; wrap.textContent = ""; wrap.appendChild(inner);
-  }
-
-  /* ----- reviewing recordings ----- */
-  var openItems = {};
-  function lev(a, b) {
-    var m = a.length, n = b.length, prev = [], cur = [], i, j;
-    for (j = 0; j <= n; j++) prev[j] = j;
-    for (i = 1; i <= m; i++) {
-      cur[0] = i;
-      for (j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-      var t = prev; prev = cur; cur = t;
-    }
-    return prev[n];
-  }
-  function analyse(item) {
-    var S = item.samples, rows = S.map(function () { return { fit: null, diff: null, outlier: false, typical: false }; });
-    var act = []; S.forEach(function (x, i) { if (x.on !== false) act.push(i); });
-    S.forEach(function (x, i) {
-      var best = 9, any = false;
-      act.forEach(function (j) { if (j !== i) { any = true; best = Math.min(best, dtwFull(x.f, S[j].f)); } });
-      if (any) rows[i].fit = best;
-    });
-    if (act.length >= 3) {
-      var fits = act.map(function (i) { return rows[i].fit; }).sort(function (p, q) { return p - q; });
-      var med = fits[Math.floor(fits.length / 2)];
-      act.forEach(function (i) { rows[i].outlier = rows[i].fit > Math.max(0.7, 1.6 * med); });
-    }
-    var withPh = act.filter(function (i) { return S[i].ph && S[i].ph.length; });
-    var typ = null;
-    if (withPh.length) {
-      var bestSum = Infinity;
-      withPh.forEach(function (i) {
-        var sum = 0; withPh.forEach(function (j) { if (i !== j) sum += lev(S[i].ph, S[j].ph); });
-        if (sum < bestSum) { bestSum = sum; typ = i; }
-      });
-      S.forEach(function (x, i) { if (x.ph && x.ph.length) rows[i].diff = lev(x.ph, S[typ].ph); });
-      rows[typ].typical = true;
-    }
-    return { rows: rows, typ: typ };
-  }
-  function applyPhones(smp, arr) { smp.ph = arr.map(function (x) { return x.p; }); smp.pms = arr.map(function (x) { return x.ms; }); }
-  async function computeSounds(item, smp) {
-    if (!PM.session) { setBuild("Load the phoneme model first (Settings, near the bottom)."); return false; }
-    var buf = await idbGet(smp.id);
-    if (!buf) { setBuild("The audio for that recording was not saved. Record it again."); return false; }
-    setBuild("Working out the sounds...");
-    await sleep(30);
-    try { applyPhones(smp, await inferPhones(fromInt16(buf))); save(); return true; }
-    catch (e) { setBuild("Could not read the sounds: " + (e && e.message ? e.message : e)); return false; }
+    return box;
   }
 
   function renderItems() {
@@ -816,7 +658,6 @@
       el.items.appendChild(p); return;
     }
     deck.items.forEach(function (item, idx) {
-      item.samples.forEach(function (x) { if (!x.id) x.id = uid(); });
       var card = document.createElement("div"); card.className = "item";
       var q = document.createElement("input"); q.type = "text"; q.value = item.q; q.setAttribute("aria-label", "Question " + (idx + 1));
       q.addEventListener("change", function () { item.q = q.value; save(); });
@@ -824,8 +665,7 @@
       a.addEventListener("change", function () { item.a = a.value; save(); });
       var meta = document.createElement("div"); meta.className = "meta";
       var n = item.samples.length, used = activeSamples(item).length;
-      var b1 = document.createElement("b"); b1.textContent = String(used);
-      meta.appendChild(b1);
+      var b1 = document.createElement("b"); b1.textContent = String(used); meta.appendChild(b1);
       meta.appendChild(document.createTextNode(" in use" + (n !== used ? " of " + n + " recordings" : (n === 1 ? " recording" : " recordings"))));
       if (used < 3) {
         var w = document.createElement("span"); w.className = "warnText";
@@ -833,7 +673,9 @@
         meta.appendChild(w);
       }
       var row = document.createElement("div"); row.className = "row";
-      var rec = document.createElement("button"); rec.textContent = "Record answer"; rec.type = "button";
+      var rec = document.createElement("button"); rec.type = "button";
+      rec.textContent = PM.session ? "Record answer" : "Record answer (load model first)";
+      rec.disabled = !PM.session || (busy);
       rec.addEventListener("click", function () { recordSample(item, rec); });
       var hear = document.createElement("button"); hear.className = "secondary"; hear.textContent = "Hear question"; hear.type = "button";
       hear.addEventListener("click", function () { speak(item.q); });
@@ -841,114 +683,78 @@
       var armed = false, tmr = null;
       del.addEventListener("click", function () {
         if (!armed) { armed = true; del.textContent = "Tap again to delete"; tmr = setTimeout(function () { armed = false; del.textContent = "Delete question"; }, 3000); return; }
-        clearTimeout(tmr); dropAudio(item.samples); deck.items.splice(idx, 1); save(); renderDecks(); renderItems();
+        clearTimeout(tmr); deck.items.splice(idx, 1); save(); renderDecks(); renderItems();
       });
       row.appendChild(rec); row.appendChild(hear); row.appendChild(del);
       card.appendChild(q); card.appendChild(a); card.appendChild(meta); card.appendChild(row);
 
-      /* review list */
-      var det = document.createElement("details");
-      if (openItems[item.id]) det.open = true;
-      det.addEventListener("toggle", function () { openItems[item.id] = det.open; });
-      var sm = document.createElement("summary"); sm.textContent = "Review recordings (" + n + ")"; det.appendChild(sm);
       var box = document.createElement("div"); box.className = "recs";
-      if (!n) { var none = document.createElement("div"); none.className = "note"; none.textContent = "No recordings yet."; box.appendChild(none); }
       var an = analyse(item);
       if (an.typ !== null) {
         var ty = document.createElement("div"); ty.className = "typical ipa";
-        ty.textContent = "Most typical sounds: " + item.samples[an.typ].ph.join(" "); box.appendChild(ty);
-      }
-      var needSounds = item.samples.filter(function (x) { return !(x.ph && x.ph.length); });
-      if (n && PM.session && needSounds.length) {
-        var all = document.createElement("button"); all.className = "secondary"; all.type = "button"; all.textContent = "Show sounds for all recordings";
-        all.addEventListener("click", async function () {
-          all.disabled = true;
-          for (var z = 0; z < needSounds.length; z++) await computeSounds(item, needSounds[z]);
-          setBuild("Done."); renderItems();
-        });
-        box.appendChild(all);
+        ty.textContent = "Most typical: " + item.samples[an.typ].ph.join(" "); box.appendChild(ty);
       }
       item.samples.forEach(function (smp, si) {
         var r = an.rows[si];
-        var card2 = document.createElement("div"); card2.className = "rec" + (smp.on === false ? " off" : "");
+        var c2 = document.createElement("div"); c2.className = "rec" + (smp.on === false ? " off" : "");
         var head = document.createElement("div"); head.className = "head";
         var lab = document.createElement("label"); var cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = smp.on !== false;
         cb.addEventListener("change", function () { smp.on = cb.checked; save(); renderItems(); });
-        lab.appendChild(cb); lab.appendChild(document.createTextNode("Use #" + (si + 1)));
+        lab.appendChild(cb); lab.appendChild(document.createTextNode("Use recording " + (si + 1)));
         head.appendChild(lab);
         var info = document.createElement("span");
-        info.textContent = smp.dur.toFixed(1) + " s" + (r.fit !== null ? " . distance to nearest other " + r.fit.toFixed(2) : "");
+        info.textContent = smp.dur ? smp.dur.toFixed(1) + " s" : "";
+        if (r.sim !== null) info.textContent += (info.textContent ? " . " : "") + Math.round(r.sim * 100) + "% like your closest other";
         head.appendChild(info);
-        card2.appendChild(head);
-        var viz = document.createElement("div"); viz.className = "viz note"; viz.textContent = "Drawing...";
-        card2.appendChild(viz); drawRec(smp, viz);
-        var snd = document.createElement("div"); snd.className = "sounds ipa";
-        snd.textContent = smp.ph && smp.ph.length ? smp.ph.join(" ") : (smp.ph ? "(no sounds detected)" : (PM.session ? "Sounds not shown yet. Tap Show sounds." : "Sound symbols appear here once the phoneme model is loaded (Sound symbols section above)."));
-        if (!(smp.ph && smp.ph.length)) snd.style.cssText = "font-size:0.85rem;color:var(--muted);font-family:inherit;word-spacing:normal";
-        card2.appendChild(snd);
+        c2.appendChild(head);
+        c2.appendChild(symbolChips(item, smp));
         var tag = document.createElement("div");
-        if (r.outlier) { tag.className = "tag odd"; tag.textContent = "Sounds different from your other recordings. Consider switching it off."; }
-        else if (r.typical) { tag.className = "tag good"; tag.textContent = "Most typical recording"; }
-        else if (r.diff !== null && r.diff > 0 && an.typ !== null) { tag.className = "tag " + (r.diff >= 3 ? "odd" : ""); tag.textContent = "Differs from the typical one by " + r.diff + (r.diff === 1 ? " sound" : " sounds"); }
-        if (tag.textContent) card2.appendChild(tag);
+        if (r.outlier) { tag.className = "tag odd"; tag.textContent = "Looks different from your other recordings. Consider switching it off."; }
+        else if (r.typical && activeSamples(item).length > 1) { tag.className = "tag good"; tag.textContent = "Most typical recording"; }
+        else if (r.diff !== null && r.diff > 0 && an.typ !== null) { tag.className = "tag " + (r.diff >= 3 ? "odd" : ""); tag.textContent = "Differs from the typical one by about " + r.diff + (r.diff === 1 ? " sound" : " sounds"); }
+        if (tag.textContent) c2.appendChild(tag);
         var acts = document.createElement("div"); acts.className = "acts";
-        var play = document.createElement("button"); play.className = "secondary"; play.type = "button"; play.textContent = "Play";
-        play.addEventListener("click", async function () {
-          var buf = await idbGet(smp.id);
-          if (!buf) { setBuild("The audio for that recording was not saved."); return; }
-          playRaw(fromInt16(buf));
-        });
-        acts.appendChild(play);
-        if (PM.session && !(smp.ph && smp.pms)) {
-          var sh = document.createElement("button"); sh.className = "secondary"; sh.type = "button"; sh.textContent = "Show sounds";
-          sh.addEventListener("click", async function () { sh.disabled = true; var ok = await computeSounds(item, smp); if (ok) { setBuild("Done."); } renderItems(); sh.disabled = false; });
-          acts.appendChild(sh);
-        }
-        var rm = document.createElement("button"); rm.className = "danger"; rm.type = "button"; rm.textContent = "Delete";
+        var rm = document.createElement("button"); rm.className = "danger"; rm.type = "button"; rm.textContent = "Delete recording";
         var arm2 = false, t2 = null;
         rm.addEventListener("click", function () {
-          if (!arm2) { arm2 = true; rm.textContent = "Tap again"; t2 = setTimeout(function () { arm2 = false; rm.textContent = "Delete"; }, 3000); return; }
-          clearTimeout(t2); if (smp.id) idbDel(smp.id); item.samples.splice(si, 1); save(); renderItems();
+          if (!arm2) { arm2 = true; rm.textContent = "Tap again"; t2 = setTimeout(function () { arm2 = false; rm.textContent = "Delete recording"; }, 3000); return; }
+          clearTimeout(t2); item.samples.splice(si, 1); save(); renderItems();
         });
-        acts.appendChild(rm);
-        card2.appendChild(acts);
-        box.appendChild(card2);
+        acts.appendChild(rm); c2.appendChild(acts);
+        box.appendChild(c2);
       });
-      det.appendChild(box); card.appendChild(det);
+      if (n) { var hint = document.createElement("div"); hint.className = "note"; hint.textContent = "Tap a symbol to remove it from that recording."; box.appendChild(hint); }
+      card.appendChild(box);
       el.items.appendChild(card);
     });
   }
 
   async function recordSample(item, btn) {
-    if (busy) return;
-    busy = true; btn.disabled = true;
+    if (busy) { manualStop = true; return; }
+    if (!PM.session) { setBuild("Load the phoneme model first."); return; }
+    busy = true;
     try {
-      setBuild("Starting the microphone...");
+      btn.textContent = "Starting..."; setBuild("Starting the microphone...");
       try { await startMic(); } catch (e) { setBuild(micError(e)); return; }
       setBuild("Stay quiet for a moment...");
       await calibrate();
-      btn.textContent = "Listening...";
-      setBuild("Say the answer now. Recording stops by itself when you finish.");
+      btn.textContent = "Stop"; btn.classList.add("rec");
+      setBuild("Say the answer now. It stops by itself after a pause, or tap Stop.");
       var res = await listenOnce(10000);
+      stopMic();
       if (res.timeout) { setBuild("Did not hear anything. Move closer and try again."); return; }
-      if (res.tooShort || !res.frames) { setBuild("That was too short. Try again."); return; }
-      var utt = prepareUtterance(res.frames, res.floor);
-      if (!utt) { setBuild("That was too short. Try again."); return; }
-      var smp = { id: uid(), f: utt.f, dur: utt.dur, on: true };
-      /* keep the raw audio so it can be played back and its sounds shown later */
-      var pad = 1600, f0 = res.frames[utt.a].idx * HOP, f1 = res.frames[utt.b].idx * HOP + WIN;
-      var s0 = Math.max(0, f0 - pad, total - RB + WIN), s1 = Math.min(total, f1 + pad), raw = new Float32Array(Math.max(0, s1 - s0));
-      for (var i = 0; i < raw.length; i++) raw[i] = ring[(s0 + i) % RB];
-      item.samples.push(smp); save();
-      if (raw.length) await idbPut(smp.id, toInt16(raw).buffer);
-      var shown = "";
-      if (PM.session && raw.length > SR * 0.3) {
-        setBuild("Working out the sounds...");
-        await sleep(30);
-        try { applyPhones(smp, await inferPhones(raw)); save(); shown = ": " + smp.ph.join(" "); } catch (e) {}
-      }
-      setBuild("Saved recording " + item.samples.length + " (" + utt.dur.toFixed(1) + " s)" + shown + ". Open Review recordings to check it.");
-      openItems[item.id] = true;
+      if (res.cancelled) { setBuild("Recording cancelled."); return; }
+      if (res.tooShort || !res.audio) { setBuild("That was too short. Try again."); return; }
+      btn.textContent = "Working..."; btn.classList.remove("rec"); btn.disabled = true;
+      setBuild("Turning your voice into phoneme symbols...");
+      await sleep(40);
+      var ph;
+      try { ph = await inferPhones(res.audio); }
+      catch (e) { setBuild("Could not read the sounds: " + (e && e.message ? e.message : e)); return; }
+      if (!ph.length) { setBuild("No sounds were recognised. Try again, a little louder."); return; }
+      item.samples.push({ id: uid(), ph: ph, dur: res.dur, on: true });
+      save();
+      setBuild("Saved recording " + item.samples.length + ": " + ph.join(" "));
     } finally {
       stopMic(); busy = false; renderItems();
     }
@@ -968,7 +774,6 @@
   el.deckDel.addEventListener("click", function () {
     if (!delArmed) { delArmed = true; el.deckDel.textContent = "Tap again to delete"; delTimer = setTimeout(function () { delArmed = false; el.deckDel.textContent = "Delete set"; }, 3000); return; }
     clearTimeout(delTimer); delArmed = false; el.deckDel.textContent = "Delete set";
-    var gone = curDeck(); if (gone) gone.items.forEach(function (it) { dropAudio(it.samples); });
     DB.decks = DB.decks.filter(function (d) { return d.id !== DB.cur; });
     if (!DB.decks.length) DB.decks.push({ id: uid(), name: "My questions", items: [] });
     DB.cur = DB.decks[0].id; save(); renderDecks(); renderItems();
@@ -978,7 +783,7 @@
     if (!q) { setBuild("Type the question first."); el.newQ.focus(); return; }
     curDeck().items.push({ id: uid(), q: q, a: a, samples: [] });
     el.newQ.value = ""; el.newA.value = ""; save(); renderDecks(); renderItems();
-    setBuild("Question added. Tap Record answer on it to teach your voice.");
+    setBuild(PM.session ? "Question added. Tap Record answer on it." : "Question added. Load the phoneme model above, then record the answer.");
   });
 
   /* ---------- tabs ---------- */
@@ -992,13 +797,13 @@
   el.tabQuiz.addEventListener("click", function () { showTab("quiz"); });
 
   /* ---------- settings ---------- */
-  function tolWord(v) { return v < 0.9 ? "strict" : v > 1.1 ? "forgiving" : "normal"; }
+  function strictWord(v) { return v < -0.04 ? "forgiving" : v > 0.04 ? "strict" : "normal"; }
   el.rate.value = CFG.rate; el.rateVal.textContent = Number(CFG.rate).toFixed(2);
-  el.tolScale.value = CFG.tolScale; el.tolVal.textContent = tolWord(CFG.tolScale);
+  el.strict.value = CFG.strict; el.strictVal.textContent = strictWord(CFG.strict);
   el.tries.value = String(CFG.tries); el.wait.value = String(CFG.wait);
   el.shuffle.checked = CFG.shuffle; el.showQ.checked = CFG.showQ;
   el.rate.addEventListener("input", function () { CFG.rate = parseFloat(el.rate.value); el.rateVal.textContent = CFG.rate.toFixed(2); saveCfg(); });
-  el.tolScale.addEventListener("input", function () { CFG.tolScale = parseFloat(el.tolScale.value); el.tolVal.textContent = tolWord(CFG.tolScale); saveCfg(); });
+  el.strict.addEventListener("input", function () { CFG.strict = parseFloat(el.strict.value); el.strictVal.textContent = strictWord(CFG.strict); saveCfg(); });
   el.tries.addEventListener("change", function () { CFG.tries = parseInt(el.tries.value, 10); saveCfg(); });
   el.wait.addEventListener("change", function () { CFG.wait = parseInt(el.wait.value, 10); saveCfg(); });
   el.shuffle.addEventListener("change", function () { CFG.shuffle = el.shuffle.checked; saveCfg(); });
@@ -1007,27 +812,21 @@
   if (window.speechSynthesis) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 
   /* ---------- Quiz ---------- */
-  var quizActive = false, quizToken = 0, skipReq = false, repeatReq = false;
-
+  var quizActive = false, quizToken = 0, skipReq = false, repeatReq = false, hearReq = false, curQ = null;
   function setPhase(t) { el.qPhase.textContent = t; }
   function setBadge(kind) { el.qBadge.textContent = kind === "ok" ? "✓" : kind === "no" ? "✗" : ""; el.qBadge.className = "badge" + (kind ? " " + kind : ""); }
+  function updateQuizButton() { el.qStart.disabled = !quizActive && !PM.session; el.qStart.textContent = quizActive ? "Stop quiz" : (PM.session ? "Start quiz" : "Start quiz (load model first)"); }
 
   el.qSkip.addEventListener("click", function () { skipReq = true; abortListen = true; stopSpeech(); });
   el.qRepeat.addEventListener("click", function () { repeatReq = true; abortListen = true; stopSpeech(); });
-  el.qHear.addEventListener("click", function () { if (curQ) { abortListen = true; hearReq = true; stopSpeech(); } });
-  var hearReq = false, curQ = null;
-
-  el.qStart.addEventListener("click", function () {
-    if (quizActive) { stopQuiz(); return; }
-    runQuiz();
-  });
+  el.qHear.addEventListener("click", function () { if (curQ) { hearReq = true; abortListen = true; stopSpeech(); } });
+  el.qStart.addEventListener("click", function () { if (quizActive) { stopQuiz(); return; } runQuiz(); });
 
   function stopQuiz() {
     quizToken++; quizActive = false; abortListen = true; stopSpeech(); stopMic();
-    el.qStart.textContent = "Start quiz"; el.qStart.classList.remove("rec"); el.quizSel.disabled = false;
-    el.qCard.hidden = true;
+    el.qStart.classList.remove("rec"); el.quizSel.disabled = false; el.qCard.hidden = true;
+    updateQuizButton();
   }
-
   function shuffleArr(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 
   async function runQuiz() {
@@ -1035,18 +834,18 @@
     var ready = deck.items.filter(function (it) { return activeSamples(it).length > 0; });
     var skipped = deck.items.length - ready.length;
     el.summary.hidden = true;
+    if (!PM.session) { el.summary.hidden = false; el.summary.textContent = "Load the phoneme model first (top of the page)."; return; }
     if (!ready.length) {
       el.summary.hidden = false; el.summary.textContent = "Nothing to ask yet. Record at least one answer for a question on the Build tab.";
       return;
     }
     var token = ++quizToken;
-    quizActive = true; el.qStart.textContent = "Stop quiz"; el.qStart.classList.add("rec"); el.quizSel.disabled = true;
-    el.qCard.hidden = false; setBadge(""); el.qDetail.textContent = "";
+    quizActive = true; el.qStart.classList.add("rec"); el.quizSel.disabled = true; updateQuizButton();
+    el.qCard.hidden = false; setBadge(""); el.qDetail.textContent = ""; el.qHeard.textContent = "";
     beepCtxGet();
-    setPhase("Starting the microphone...");
-    el.qNum.textContent = ""; el.qText.textContent = "";
+    setPhase("Starting the microphone..."); el.qNum.textContent = ""; el.qText.textContent = "";
     try { await startMic(); }
-    catch (e) { setPhase(micError(e)); quizActive = false; el.qStart.textContent = "Start quiz"; el.qStart.classList.remove("rec"); el.quizSel.disabled = false; return; }
+    catch (e) { setPhase(micError(e)); quizActive = false; el.qStart.classList.remove("rec"); el.quizSel.disabled = false; updateQuizButton(); return; }
     setPhase("Stay quiet for a moment...");
     await calibrate();
 
@@ -1057,7 +856,7 @@
       curQ = item;
       el.qNum.textContent = "Question " + (i + 1) + " of " + order.length;
       el.qText.textContent = CFG.showQ ? item.q : "(listening only)";
-      setBadge(""); el.qDetail.textContent = "";
+      setBadge(""); el.qDetail.textContent = ""; el.qHeard.textContent = "";
       while (token === quizToken && !solved) {
         skipReq = false; repeatReq = false; hearReq = false;
         setPhase("Listen to the question...");
@@ -1075,22 +874,24 @@
           if (hearReq) { setPhase("The answer is: " + (item.a || "(no written answer)")); await speak(item.a); }
           continue;
         }
-        var verdict = null;
-        if (res.frames) {
-          var utt = prepareUtterance(res.frames, res.floor);
-          if (utt) verdict = evaluate(item, curDeck(), utt);
+        var verdict = null, heard = null;
+        if (res.audio) {
+          setPhase("Checking..."); await sleep(40);
+          try { heard = await inferPhones(res.audio); verdict = evaluate(item, curDeck(), heard); }
+          catch (e) { setPhase("Could not check that: " + (e && e.message ? e.message : e)); }
         }
+        el.qHeard.textContent = heard ? (heard.length ? "Heard: " + heard.join(" ") : "Heard: (no sounds recognised)") : "";
         if (verdict && verdict.ok) {
           setBadge("ok"); setPhase("Correct");
-          el.qDetail.textContent = "match " + verdict.own.toFixed(2) + " (needs under " + verdict.tol.toFixed(2) + ")";
+          el.qDetail.textContent = "match " + Math.round(verdict.own * 100) + "% (needs " + Math.round(verdict.tol * 100) + "%)";
           await beep(true); solved = true;
           if (first) firstTry++;
         } else {
           tries++; first = false;
           setBadge("no");
-          if (!res.frames) setPhase(res.timeout ? "No answer heard" : "That was too short");
+          if (!res.audio) setPhase(res.timeout ? "No answer heard" : "That was too short");
           else setPhase("Not quite");
-          if (verdict) el.qDetail.textContent = "match " + verdict.own.toFixed(2) + " (needs under " + verdict.tol.toFixed(2) + ")" + (verdict.other < Infinity ? ", nearest other answer " + verdict.other.toFixed(2) : "");
+          if (verdict) el.qDetail.textContent = "match " + Math.round(verdict.own * 100) + "% (needs " + Math.round(verdict.tol * 100) + "%)" + (verdict.other >= 0 ? ", closest other answer " + Math.round(verdict.other * 100) + "%" : "");
           else el.qDetail.textContent = "";
           await beep(false);
           if (tries >= CFG.tries) {
@@ -1130,8 +931,9 @@
   load();
   renderDecks();
   renderItems();
+  updateQuizButton();
   showTab("build");
-  window.__trainer = { melSpectrogram: melSpectrogram, paintSpectrogram: paintSpectrogram, drawRec: drawRec, prepareUtterance: prepareUtterance, dtwFull: dtwFull, makeEndpointer: makeEndpointer, frameFeature: frameFeature, frameBuf: frameBuf };
+  window.__trainer = { inferPhones: inferPhones, sim: sim, wdist: wdist, analyse: analyse, evaluate: evaluate, itemThreshold: itemThreshold, makeEndpointer: makeEndpointer, DB: function () { return DB; }, CFG: CFG };
 })();
 </script>
 </body>
