@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phoneme Listener</title>
+<style>
+  :root {
+    --bg: #f3f5f4; --surface: #ffffff; --fg: #17201d; --muted: #5d6b66;
+    --line: #d5dcd9; --accent: #0b7a5f; --accent-fg: #ffffff; --rec: #c2331f;
+    --chip: #e4efeb;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1513; --surface: #182019; --fg: #e6efeb; --muted: #94a59e;
+      --line: #2a3832; --accent: #3fc79f; --accent-fg: #07120e; --rec: #ff6b55;
+      --chip: #203029; color-scheme: dark;
+    }
+  }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 16px; }
+  h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 0.9rem; margin: 2px 0 0; }
+  .ipa, .mono { font-family: "Charis SIL", "Gentium Plus", "Noto Sans", "DejaVu Sans", "Segoe UI", system-ui, sans-serif; }
+  section { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+  label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+  select, input[type=text] {
+    width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--fg);
+  }
+  button {
+    font: inherit; font-weight: 600; padding: 12px 16px; border-radius: 10px; border: 0;
+    background: var(--accent); color: var(--accent-fg); cursor: pointer;
+  }
+  button.secondary { background: var(--chip); color: var(--fg); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .row > * { flex: 1 1 140px; }
+  progress { width: 100%; height: 8px; accent-color: var(--accent); }
+  .status { font-size: 0.9rem; color: var(--muted); min-height: 1.4em; overflow-wrap: anywhere; }
+  .rec { background: var(--rec); color: #fff; }
+  .big { font-size: 1.9rem; line-height: 1.5; overflow-wrap: anywhere; word-spacing: 0.15em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--chip); border-radius: 8px; padding: 4px 8px; text-align: center; min-width: 44px; }
+  .chip b { display: block; font-size: 1.2rem; font-weight: 500; }
+  .chip small { color: var(--muted); font-size: 0.68rem; font-variant-numeric: tabular-nums; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+  .hist { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .hist li { border-top: 1px solid var(--line); padding-top: 8px; overflow-wrap: anywhere; }
+  .hist time { color: var(--muted); font-size: 0.75rem; display: block; }
+  .note { font-size: 0.82rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Phoneme Listener</h1>
+    <p class="sub">Speech to IPA phonemes, computed on this device. After the first model download, it works offline.</p>
+  </header>
+
+  <section aria-labelledby="m-h">
+    <label id="m-h" for="model">Model</label>
+    <select id="model">
+      <option value="int8">wav2vec2 phoneme, INT8 (recommended)</option>
+      <option value="fp16">wav2vec2 phoneme, FP16 (experimental)</option>
+      <option value="custom">Custom ONNX URL</option>
+    </select>
+    <div id="customBox" hidden class="row">
+      <input type="text" id="customModel" placeholder="Model .onnx URL" aria-label="Custom model URL">
+      <input type="text" id="customVocab" placeholder="vocab.json URL" aria-label="Custom vocab URL">
+    </div>
+    <button id="load">Download and load model</button>
+    <progress id="prog" value="0" max="1" hidden></progress>
+    <div class="status" id="status" role="status">Model not loaded. First download is a few hundred MB, so use Wi-Fi.</div>
+  </section>
+
+  <section aria-labelledby="r-h">
+    <label id="r-h">Input</label>
+    <div class="row">
+      <button id="rec" disabled>Record</button>
+      <button id="pick" class="secondary" disabled>Choose audio file</button>
+    </div>
+    <input type="file" id="file" accept="audio/*" hidden>
+    <div class="note">Records up to 20 seconds. Noise suppression is turned off so the model hears the raw speech.</div>
+  </section>
+
+  <section aria-labelledby="o-h" aria-live="polite">
+    <label id="o-h">Result</label>
+    <div class="big ipa" id="out">Nothing recorded yet.</div>
+    <details>
+      <summary>Phone timings</summary>
+      <div class="chips ipa" id="chips"></div>
+    </details>
+    <div class="row">
+      <button class="secondary" id="copy" disabled>Copy IPA</button>
+      <button class="secondary" id="clear" disabled>Clear history</button>
+    </div>
+    <ul class="hist ipa" id="hist"></ul>
+  </section>
+
+  <p class="note">Microphone access needs HTTPS (or localhost). The output is a phoneme sequence from a CTC model, so expect some substitutions, especially with noise or strong accents.</p>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  var ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
+  var PRESETS = {
+    int8: {
+      model: "https://huggingface.co/zegt/uitspraak-onnx-int8/resolve/main/phone.int8.onnx",
+      vocab: [
+        "https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/vocab.json",
+        "https://huggingface.co/facebook/wav2vec2-lv-60-espeak-cv-ft/resolve/main/vocab.json"
+      ]
+    },
+    fp16: {
+      model: "https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/model.onnx",
+      vocab: ["https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/vocab.json"]
+    }
+  };
+  var CACHE = "phoneme-listener-v1";
+  var MAX_SECONDS = 20;
+  var SPECIAL = { "<pad>": 1, "<s>": 1, "</s>": 1, "<unk>": 1 };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var els = {
+    model: $("model"), customBox: $("customBox"), customModel: $("customModel"), customVocab: $("customVocab"),
+    load: $("load"), prog: $("prog"), status: $("status"), rec: $("rec"), pick: $("pick"), file: $("file"),
+    out: $("out"), chips: $("chips"), copy: $("copy"), clear: $("clear"), hist: $("hist")
+  };
+
+  var session = null, idToTok = [], lastIpa = "";
+  var mediaRec = null, stream = null, chunks = [], stopTimer = null;
+
+  function setStatus(t) { els.status.textContent = t; }
+
+  els.model.addEventListener("change", function () {
+    els.customBox.hidden = els.model.value !== "custom";
+  });
+
+  var originOk = /^https?:$/.test(location.protocol) && location.origin !== "null" && window.top === window.self;
+  if (!originOk) {
+    setStatus("This looks like an in-app preview, which blocks downloads and the microphone. Open this page from an https:// link in Chrome.");
+  }
+
+  if (window.ort) {
+    ort.env.wasm.wasmPaths = ORT_BASE;
+    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
+  } else {
+    setStatus("Could not load the ONNX runtime. Check your connection and reload.");
+    els.load.disabled = true;
+  }
+
+  async function fetchCached(url, onProgress) {
+    var cache = null;
+    try { cache = await caches.open(CACHE); } catch (e) {}
+    if (cache) {
+      var hit = await cache.match(url);
+      if (hit) { onProgress(1, 1, true); return await hit.arrayBuffer(); }
+    }
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("Download failed (" + res.status + ") for " + url);
+    var total = parseInt(res.headers.get("content-length") || "0", 10);
+    var reader = res.body.getReader();
+    var parts = [], got = 0;
+    for (;;) {
+      var r = await reader.read();
+      if (r.done) break;
+      parts.push(r.value); got += r.value.length;
+      onProgress(got, total, false);
+    }
+    var buf = new Uint8Array(got), off = 0;
+    for (var i = 0; i < parts.length; i++) { buf.set(parts[i], off); off += parts[i].length; }
+    parts = null;
+    if (cache) {
+      try { await cache.put(url, new Response(buf.buffer.slice(0), { headers: { "content-type": "application/octet-stream" } })); }
+      catch (e) { /* storage full or blocked: the model still works this session */ }
+    }
+    return buf.buffer;
+  }
+
+  async function autoLoadIfCached() {
+    if (!window.ort || !window.caches) return;
+    try {
+      var cache = await caches.open(CACHE);
+      if (await cache.match(PRESETS.int8.model)) {
+        els.model.value = "int8";
+        els.load.click();
+      }
+    } catch (e) {}
+  }
+
+  els.load.addEventListener("click", async function () {
+    var key = els.model.value;
+    var cfg = key === "custom"
+      ? { model: els.customModel.value.trim(), vocab: els.customVocab.value.trim() }
+      : PRESETS[key];
+    if (typeof cfg.vocab === "string") cfg = { model: cfg.model, vocab: [cfg.vocab] };
+    if (!cfg.model || !cfg.vocab[0]) { setStatus("Enter both a model URL and a vocab URL."); return; }
+    els.load.disabled = true; els.rec.disabled = true; els.pick.disabled = true;
+    els.prog.hidden = false; els.prog.value = 0;
+    try {
+      setStatus("Loading vocabulary...");
+      var vocab = null, lastErr = "";
+      for (var vi = 0; vi < cfg.vocab.length && !vocab; vi++) {
+        try {
+          var vres = await fetch(cfg.vocab[vi]);
+          if (!vres.ok) { lastErr = "status " + vres.status; continue; }
+          vocab = await vres.json();
+        } catch (ve) { lastErr = ve.message || String(ve); }
+      }
+      if (!vocab) throw new Error("Vocabulary download failed (" + lastErr + ")");
+      idToTok = [];
+      Object.keys(vocab).forEach(function (t) { idToTok[vocab[t]] = t; });
+
+      var buf = await fetchCached(cfg.model, function (got, total, cached) {
+        if (cached) { setStatus("Reading model from local cache..."); els.prog.removeAttribute("value"); return; }
+        if (total) { els.prog.value = got / total; setStatus("Downloading model: " + Math.round(got / 1048576) + " of " + Math.round(total / 1048576) + " MB"); }
+        else { els.prog.removeAttribute("value"); setStatus("Downloading model: " + Math.round(got / 1048576) + " MB"); }
+      });
+      setStatus("Starting the model (this can take a little while)...");
+      els.prog.removeAttribute("value");
+      session = await ort.InferenceSession.create(buf, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
+      buf = null;
+      setStatus("Ready. Everything now runs on this device.");
+      els.rec.disabled = false; els.pick.disabled = false;
+    } catch (e) {
+      session = null;
+      var em = e && e.message ? e.message : String(e);
+      if (!originOk || /fetch/i.test(em)) em += ". If you opened this from a preview or a file, open it from an https:// link in Chrome instead.";
+      setStatus("Could not load: " + em);
+    } finally {
+      els.prog.hidden = true; els.load.disabled = false;
+    }
+  });
+
+  function half(h) {
+    var s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
+    if (e === 0) return s * Math.pow(2, -14) * (f / 1024);
+    if (e === 31) return f ? NaN : s * Infinity;
+    return s * Math.pow(2, e - 15) * (1 + f / 1024);
+  }
+
+  async function toMono16k(arrayBuffer) {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    var ctx = new AC();
+    var ab;
+    try { ab = await ctx.decodeAudioData(arrayBuffer); } finally { try { ctx.close(); } catch (e) {} }
+    var len = Math.ceil(ab.duration * 16000);
+    var off = new OfflineAudioContext(1, len, 16000);
+    var src = off.createBufferSource();
+    src.buffer = ab; src.connect(off.destination); src.start();
+    var rendered = await off.startRendering();
+    var d = rendered.getChannelData(0).slice(0, MAX_SECONDS * 16000);
+    var mean = 0, i;
+    for (i = 0; i < d.length; i++) mean += d[i];
+    mean /= d.length;
+    var v = 0;
+    for (i = 0; i < d.length; i++) { var x = d[i] - mean; v += x * x; }
+    var sd = Math.sqrt(v / d.length + 1e-7);
+    for (i = 0; i < d.length; i++) d[i] = (d[i] - mean) / sd;
+    return d;
+  }
+
+  function decodeCtc(data, T, V) {
+    var phones = [], prev = -1;
+    for (var t = 0; t < T; t++) {
+      var best = 0, bv = -Infinity, base = t * V;
+      for (var k = 0; k < V; k++) {
+        var val = data[base + k];
+        if (val > bv) { bv = val; best = k; }
+      }
+      if (best !== prev) {
+        var tok = idToTok[best];
+        if (tok !== undefined && !SPECIAL[tok]) phones.push({ p: tok, ms: t * 20 });
+      }
+      prev = best;
+    }
+    return phones;
+  }
+
+  async function transcribe(arrayBuffer) {
+    if (!session) { setStatus("Load the model first."); return; }
+    els.rec.disabled = true; els.pick.disabled = true;
+    try {
+      setStatus("Preparing audio...");
+      var wav = await toMono16k(arrayBuffer);
+      setStatus("Listening (" + (wav.length / 16000).toFixed(1) + " s of audio)...");
+      await new Promise(function (r) { setTimeout(r, 30); });
+      var t0 = performance.now();
+      var feeds = {};
+      feeds[session.inputNames[0]] = new ort.Tensor("float32", wav, [1, wav.length]);
+      var res = await session.run(feeds);
+      var out = res[session.outputNames[0]];
+      var dims = out.dims, V = dims[dims.length - 1], T = dims[dims.length - 2];
+      var data = out.data;
+      if (out.type === "float16" || data instanceof Uint16Array) {
+        var f = new Float32Array(data.length);
+        for (var i = 0; i < data.length; i++) f[i] = half(data[i]);
+        data = f;
+      }
+      var phones = decodeCtc(data, T, V);
+      var secs = ((performance.now() - t0) / 1000).toFixed(1);
+      showResult(phones);
+      setStatus("Done in " + secs + " s.");
+    } catch (e) {
+      setStatus("Could not process audio: " + (e && e.message ? e.message : e));
+    } finally {
+      els.rec.disabled = false; els.pick.disabled = false;
+    }
+  }
+
+  function showResult(phones) {
+    lastIpa = phones.map(function (x) { return x.p; }).join(" ");
+    els.out.textContent = lastIpa || "(no speech detected)";
+    els.chips.textContent = "";
+    phones.forEach(function (x) {
+      var c = document.createElement("div"); c.className = "chip";
+      var b = document.createElement("b"); b.textContent = x.p;
+      var s = document.createElement("small"); s.textContent = x.ms + " ms";
+      c.appendChild(b); c.appendChild(s); els.chips.appendChild(c);
+    });
+    els.copy.disabled = !lastIpa;
+    if (lastIpa) {
+      var li = document.createElement("li");
+      var tm = document.createElement("time"); tm.textContent = new Date().toLocaleTimeString();
+      var tx = document.createElement("div"); tx.textContent = lastIpa;
+      li.appendChild(tm); li.appendChild(tx);
+      els.hist.insertBefore(li, els.hist.firstChild);
+      els.clear.disabled = false;
+    }
+  }
+
+  els.copy.addEventListener("click", async function () {
+    try { await navigator.clipboard.writeText(lastIpa); setStatus("Copied."); }
+    catch (e) {
+      var r = document.createRange(); r.selectNodeContents(els.out);
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      setStatus("Text selected. Use your phone's copy action.");
+    }
+  });
+  els.clear.addEventListener("click", function () { els.hist.textContent = ""; els.clear.disabled = true; });
+
+  els.pick.addEventListener("click", function () { els.file.click(); });
+  els.file.addEventListener("change", async function () {
+    var f = els.file.files && els.file.files[0];
+    if (!f) return;
+    var ab = await f.arrayBuffer();
+    els.file.value = "";
+    transcribe(ab);
+  });
+
+  function stopRecording() {
+    clearTimeout(stopTimer);
+    if (mediaRec && mediaRec.state !== "inactive") mediaRec.stop();
+  }
+
+  els.rec.addEventListener("click", async function () {
+    if (mediaRec && mediaRec.state === "recording") { stopRecording(); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 }
+      });
+    } catch (e) {
+      setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page over HTTPS and allow the microphone.");
+      return;
+    }
+    chunks = [];
+    mediaRec = new MediaRecorder(stream);
+    mediaRec.ondataavailable = function (ev) { if (ev.data && ev.data.size) chunks.push(ev.data); };
+    mediaRec.onstop = async function () {
+      stream.getTracks().forEach(function (t) { t.stop(); });
+      els.rec.textContent = "Record"; els.rec.classList.remove("rec");
+      var blob = new Blob(chunks, { type: mediaRec.mimeType || "audio/webm" });
+      transcribe(await blob.arrayBuffer());
+    };
+    mediaRec.start();
+    els.rec.textContent = "Stop"; els.rec.classList.add("rec");
+    els.pick.disabled = true;
+    setStatus("Recording... tap Stop when finished (auto-stops at " + MAX_SECONDS + " s).");
+    stopTimer = setTimeout(stopRecording, MAX_SECONDS * 1000);
+  });
+  autoLoadIfCached();
+})();
+</script>
+</body>
+</html>
