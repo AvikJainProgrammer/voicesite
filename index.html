@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mantra Counter</title>
+<title>Answer Trainer</title>
 <style>
   :root {
-    --bg: #eef1f5; --surface: #ffffff; --fg: #14181f; --muted: #5b6672;
-    --line: #d3d9e0; --accent: #b84e0a; --accent-fg: #ffffff; --ring: #dfe4ea;
-    --chip: #e3e8ee; --good: #1d7a4a; --warn: #a15c00; --rec: #c2331f;
+    --bg: #eef2f4; --surface: #ffffff; --fg: #141b1f; --muted: #5a6a72;
+    --line: #d2dade; --accent: #0a6e8a; --accent-fg: #ffffff;
+    --chip: #e2eaee; --good: #1a7f4b; --bad: #c2331f; --warn: #9a6200;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0e1217; --surface: #161c24; --fg: #e8edf2; --muted: #93a0ad;
-      --line: #28323d; --accent: #f0963c; --accent-fg: #1a0d02; --ring: #26303a;
-      --chip: #212b36; --good: #4cc98a; --warn: #e8b04a; --rec: #ff6b55;
+      --bg: #0d1316; --surface: #151d21; --fg: #e6eef1; --muted: #8fa1a9;
+      --line: #27343a; --accent: #4cc3e0; --accent-fg: #04171c;
+      --chip: #1f2b31; --good: #4cc98a; --bad: #ff6b55; --warn: #e8b04a;
       color-scheme: dark;
     }
   }
@@ -27,537 +27,196 @@
     font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
   }
-  main { max-width: 560px; margin: 0 auto; display: grid; gap: 16px; }
+  main { max-width: 600px; margin: 0 auto; display: grid; gap: 16px; }
   h1 { font-size: 1.3rem; margin: 0; letter-spacing: -0.01em; }
+  h2 { font-size: 1rem; margin: 0; }
   .sub { color: var(--muted); font-size: 0.88rem; margin: 2px 0 0; }
-  .ipa { font-family: "Charis SIL", "Gentium Plus", "Noto Sans", "DejaVu Sans", "Segoe UI", system-ui, sans-serif; }
   section { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
-  label.cap, .cap { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-  select, input[type=text], input[type=number] {
+  .cap { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  label { font-size: 0.9rem; }
+  select, input[type=text] {
     width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px;
     border: 1px solid var(--line); background: var(--bg); color: var(--fg);
   }
   input[type=range] { width: 100%; accent-color: var(--accent); }
   button {
-    font: inherit; font-weight: 600; padding: 12px 16px; border-radius: 10px; border: 0;
+    font: inherit; font-weight: 600; padding: 11px 14px; border-radius: 10px; border: 0;
     background: var(--accent); color: var(--accent-fg); cursor: pointer; touch-action: manipulation;
   }
   button.secondary { background: var(--chip); color: var(--fg); }
-  button.rec { background: var(--rec); color: #fff; }
+  button.danger { background: var(--chip); color: var(--bad); }
+  button.rec { background: var(--bad); color: #fff; }
   button:disabled { opacity: 0.45; cursor: not-allowed; }
   :is(button, select, input, summary):focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .row > * { flex: 1 1 120px; min-width: 0; }
-  progress { width: 100%; height: 8px; accent-color: var(--accent); }
+  .row > * { flex: 1 1 110px; min-width: 0; }
+  .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--chip); padding: 4px; border-radius: 12px; }
+  .tabs button { background: transparent; color: var(--muted); }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
   .status { font-size: 0.88rem; color: var(--muted); min-height: 1.4em; overflow-wrap: anywhere; }
-
-  .counter { text-align: center; gap: 8px; }
-  .dial { position: relative; width: min(72vw, 280px); aspect-ratio: 1; margin: 4px auto 0; max-width: 100%; }
-  .dial svg { width: 100%; height: 100%; display: block; transform: rotate(-90deg); }
-  .dial .track { fill: none; stroke: var(--ring); stroke-width: 9; }
-  .dial .bar { fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 0.35s ease; }
-  .dial .center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
-  .num { font-size: clamp(3.4rem, 22vw, 5.6rem); font-weight: 300; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.03em; }
-  .bead { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
-  .pulse .num { animation: pop 0.25s ease-out; }
-  @keyframes pop { from { transform: scale(1.08); } to { transform: scale(1); } }
-  @media (prefers-reduced-motion: reduce) { .pulse .num { animation: none; } .dial .bar { transition: none; } }
-  .meter { height: 6px; border-radius: 3px; background: var(--ring); overflow: hidden; }
-  .meter > i { display: block; height: 100%; width: 0; background: var(--good); transition: width 0.08s linear; }
-  .heard { font-size: 0.95rem; color: var(--muted); min-height: 2.8em; overflow-wrap: anywhere; text-align: left; }
-  .state { font-size: 0.85rem; font-weight: 600; }
-  .state.on { color: var(--good); }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip { background: var(--chip); color: var(--fg); border-radius: 8px; padding: 6px 10px; font-size: 1.15rem; font-weight: 500; min-width: 40px; }
   .note { font-size: 0.82rem; color: var(--muted); }
+  .meter { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; }
+  .meter > i { display: block; height: 100%; width: 0; background: var(--good); transition: width 0.08s linear; }
+
+  .item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; min-width: 0; }
+  .item .meta { font-size: 0.82rem; color: var(--muted); }
+  .meta b { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .warnText { color: var(--warn); }
+  .items { display: grid; gap: 10px; }
+
+  .qcard { text-align: center; gap: 10px; }
+  .qnum { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+  .qtext { font-size: 1.5rem; line-height: 1.3; overflow-wrap: anywhere; min-height: 2.6em; display: grid; place-content: center; }
+  .phase { font-weight: 600; }
+  .badge { font-size: 2.6rem; line-height: 1; min-height: 1em; font-weight: 700; }
+  .badge.ok { color: var(--good); }
+  .badge.no { color: var(--bad); }
+  .detail { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; min-height: 1.3em; }
+  .summary { text-align: left; }
+  .summary ul { margin: 6px 0 0; padding-left: 1.2em; }
   .switch { display: flex; align-items: center; gap: 8px; font-size: 0.92rem; }
   .switch input { width: 20px; height: 20px; accent-color: var(--accent); flex: none; }
   .val { font-variant-numeric: tabular-nums; font-weight: 600; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details > div { display: grid; gap: 12px; margin-top: 12px; }
 </style>
 </head>
 <body>
 <main>
   <header>
-    <h1>Mantra Counter</h1>
-    <p class="sub">Listens while you chant and counts each repetition. Runs on this device.</p>
+    <h1>Answer Trainer</h1>
+    <p class="sub">Write questions, teach each answer in your own voice, then quiz yourself hands-free. Everything stays on this device.</p>
   </header>
 
-  <section class="counter" id="counterBox" aria-label="Counter">
-    <div class="dial" id="dial">
-      <svg viewBox="0 0 120 120" aria-hidden="true">
-        <circle class="track" cx="60" cy="60" r="52"></circle>
-        <circle class="bar" id="bar" cx="60" cy="60" r="52"></circle>
-      </svg>
-      <div class="center">
-        <div class="num" id="count" aria-live="polite">0</div>
-        <div class="bead" id="bead">bead 0 of 108</div>
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button id="tabBuild" role="tab" aria-selected="true" aria-controls="buildPane">Build</button>
+    <button id="tabQuiz" role="tab" aria-selected="false" aria-controls="quizPane">Quiz</button>
+  </div>
+
+  <div id="buildPane" role="tabpanel" style="display:grid;gap:16px">
+    <section aria-labelledby="dh">
+      <h2 id="dh">Set</h2>
+      <select id="deckSel" aria-label="Question set"></select>
+      <input type="text" id="deckName" placeholder="Set name" aria-label="Set name" autocomplete="off">
+      <div class="row">
+        <button id="deckNew" class="secondary">New set</button>
+        <button id="deckRename" class="secondary">Rename</button>
+        <button id="deckDel" class="danger">Delete set</button>
       </div>
-    </div>
-    <div class="state" id="state">Not listening</div>
-    <div class="meter" aria-hidden="true"><i id="level"></i></div>
-    <div class="row">
-      <button id="start" disabled>Start listening</button>
-    </div>
-    <div class="row">
-      <button class="secondary" id="minus" aria-label="Subtract one">&minus; 1</button>
-      <button class="secondary" id="plus" aria-label="Add one">+ 1</button>
-      <button class="secondary" id="reset">Reset</button>
-    </div>
-    <div class="status" id="status" role="status"></div>
-    <div class="heard ipa" id="heard" aria-hidden="true"></div>
-  </section>
+    </section>
 
-  <section aria-labelledby="mh">
-    <span class="cap" id="mh">Your mantra</span>
-    <input type="text" id="mname" placeholder="Name (optional), for example Om Namah Shivaya" aria-label="Mantra name">
-    <div class="row">
-      <button id="recRef" disabled>Record the mantra once</button>
-    </div>
-    <div class="note">Say the mantra one time at your normal chanting pace, then tap Stop. Record in a quiet spot, close to the phone, and chant the same way you will later.</div>
-    <div class="note" id="refInfo">No mantra recorded yet.</div>
-    <div id="phRef" hidden>
-      <div class="chips ipa" id="refChips"></div>
-      <label class="cap" for="refText">Phonemes (editable, separated by spaces)</label>
-      <input type="text" class="ipa" id="refText" placeholder="Filled in after you record" autocomplete="off" spellcheck="false">
-    </div>
-  </section>
+    <section aria-labelledby="ah">
+      <h2 id="ah">Add a question</h2>
+      <label for="newQ">Question (this is read aloud)</label>
+      <input type="text" id="newQ" placeholder="For example: What is the capital of France?" autocomplete="off">
+      <label for="newA">Answer (written, for your reference)</label>
+      <input type="text" id="newA" placeholder="For example: Paris" autocomplete="off">
+      <button id="addItem">Add question</button>
+      <div class="note">After adding, record the spoken answer three or more times so the app learns how you say it.</div>
+    </section>
 
-  <section aria-labelledby="sh">
-    <span class="cap" id="sh">Settings</span>
-    <div>
-      <label for="engine">Counting method</label>
-      <select id="engine">
-        <option value="acoustic">Fast sound match (no download, instant)</option>
-        <option value="phoneme">Phoneme model (slow, big download)</option>
-      </select>
-    </div>
-    <div id="acBox">
-      <label for="tol">Match tolerance: <span class="val" id="tolVal">0.95</span></label>
-      <input type="range" id="tol" min="0.40" max="1.40" step="0.01" value="0.95">
-      <div class="note">While chanting, watch the "closest match" number under the counter. Set the tolerance just above the numbers you see on real repetitions. Higher counts more, lower counts less.</div>
-    </div>
-    <div id="phBox" hidden>
-      <label for="thr">Match strictness: <span class="val" id="thrVal">65%</span></label>
-      <input type="range" id="thr" min="40" max="95" step="1" value="65">
-      <div class="note">Lower it if repetitions are missed. Raise it if other speech gets counted.</div>
-    </div>
-    <div>
-      <label for="target">Beads per round</label>
-      <select id="target">
-        <option value="108">108</option>
-        <option value="54">54</option>
-        <option value="27">27</option>
-        <option value="21">21</option>
-        <option value="11">11</option>
-      </select>
-    </div>
-    <label class="switch"><input type="checkbox" id="snd" checked> Soft tick on each count</label>
-    <label class="switch"><input type="checkbox" id="vib" checked> Vibrate on each count</label>
-  </section>
+    <section aria-labelledby="ih">
+      <h2 id="ih">Questions in this set</h2>
+      <div class="meter" aria-hidden="true"><i id="level"></i></div>
+      <div class="status" id="buildStatus" role="status"></div>
+      <div class="items" id="items"></div>
+    </section>
+  </div>
 
-  <section aria-labelledby="lh" id="modelBox" hidden>
-    <span class="cap" id="lh">Speech model (phoneme method only)</span>
-    <select id="model" aria-label="Model">
-      <option value="int8">wav2vec2 phoneme, INT8 (recommended)</option>
-      <option value="fp16">wav2vec2 phoneme, FP16 (experimental)</option>
-    </select>
-    <button id="load" class="secondary">Download and load model</button>
-    <progress id="prog" value="0" max="1" hidden></progress>
-    <div class="status" id="mstatus" role="status">Model not loaded. The first download is a few hundred MB, so use Wi-Fi.</div>
-    <div class="note">Open this page from an https:// link in Chrome. In-app previews block the microphone and downloads.</div>
+  <div id="quizPane" role="tabpanel" hidden style="gap:16px">
+    <section>
+      <label for="quizSel" class="cap">Set to practise</label>
+      <select id="quizSel" aria-label="Set to practise"></select>
+      <div class="row">
+        <label class="switch"><input type="checkbox" id="shuffle" checked> Shuffle</label>
+        <label class="switch"><input type="checkbox" id="showQ" checked> Show question text</label>
+      </div>
+      <button id="qStart">Start quiz</button>
+    </section>
+
+    <section class="qcard" id="qCard" hidden aria-live="polite">
+      <div class="qnum" id="qNum"></div>
+      <div class="qtext" id="qText"></div>
+      <div class="phase" id="qPhase"></div>
+      <div class="badge" id="qBadge" aria-hidden="true"></div>
+      <div class="detail" id="qDetail"></div>
+      <div class="meter" aria-hidden="true"><i id="level2"></i></div>
+      <div class="row">
+        <button class="secondary" id="qRepeat">Repeat question</button>
+        <button class="secondary" id="qHear">Hear answer</button>
+        <button class="secondary" id="qSkip">Skip</button>
+      </div>
+    </section>
+
+    <section class="summary" id="summary" hidden></section>
+  </div>
+
+  <section>
+    <details>
+      <summary>Settings</summary>
+      <div>
+        <div>
+          <label for="voice">Voice that reads questions</label>
+          <select id="voice"></select>
+        </div>
+        <div>
+          <label for="rate">Speaking speed: <span class="val" id="rateVal">1.0</span></label>
+          <input type="range" id="rate" min="0.6" max="1.5" step="0.05" value="1">
+        </div>
+        <div>
+          <label for="tolScale">Answer strictness: <span class="val" id="tolVal">normal</span></label>
+          <input type="range" id="tolScale" min="0.7" max="1.5" step="0.05" value="1">
+          <div class="note">Left is stricter, right is more forgiving. The detail line after each answer shows the numbers to tune against.</div>
+        </div>
+        <div>
+          <label for="tries">Wrong tries before the answer is revealed</label>
+          <select id="tries"><option>1</option><option>2</option><option selected>3</option><option>5</option><option>10</option></select>
+        </div>
+        <div>
+          <label for="wait">Seconds to wait for you to start speaking</label>
+          <select id="wait"><option>6</option><option selected>10</option><option>15</option><option>20</option></select>
+        </div>
+        <div class="note">Open this page from an https:// link in Chrome. In-app previews block the microphone.</div>
+      </div>
+    </details>
   </section>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script>
 (function () {
   "use strict";
-  var ORT_BASE = "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/";
-  var PRESETS = {
-    int8: {
-      model: "https://huggingface.co/zegt/uitspraak-onnx-int8/resolve/main/phone.int8.onnx",
-      vocab: [
-        "https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/vocab.json",
-        "https://huggingface.co/facebook/wav2vec2-lv-60-espeak-cv-ft/resolve/main/vocab.json"
-      ]
-    },
-    fp16: {
-      model: "https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/model.onnx",
-      vocab: ["https://huggingface.co/sadda-speech/wav2vec2-espeak-ctc/resolve/main/vocab.json"]
-    }
-  };
-  var CACHE = "phoneme-listener-v1";
-  var SR = 16000;
-  var SPECIAL = { "<pad>": 1, "<s>": 1, "</s>": 1, "<unk>": 1 };
-  var SILENCE_RMS = 0.004;
-
+  var SR = 16000, RB = SR * 30;
   var $ = function (id) { return document.getElementById(id); };
   var el = {};
-  ["counterBox","dial","bar","count","bead","state","level","start","minus","plus","reset","status","heard",
-   "mname","recRef","refChips","refInfo","refText","thr","thrVal","target","snd","vib",
-   "engine","acBox","phBox","tol","tolVal","modelBox","phRef",
-   "model","load","prog","mstatus"].forEach(function (k) { el[k] = $(k); });
+  ["tabBuild","tabQuiz","buildPane","quizPane","deckSel","deckName","deckNew","deckRename","deckDel","newQ","newA","addItem",
+   "level","level2","buildStatus","items","quizSel","shuffle","showQ","qStart","qCard","qNum","qText","qPhase","qBadge","qDetail",
+   "qRepeat","qHear","qSkip","summary","voice","rate","rateVal","tolScale","tolVal","tries","wait"].forEach(function (k) { el[k] = $(k); });
 
-  /* ---------- persistence (best effort) ---------- */
-  function store(k, v) { try { localStorage.setItem("mantra." + k, JSON.stringify(v)); } catch (e) {} }
-  function recall(k, d) { try { var v = localStorage.getItem("mantra." + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-  var S = {
-    count: recall("count", 0),
-    target: recall("target", 108),
-    thr: recall("thr", 65),
-    ref: recall("ref", []),
-    refDur: recall("refDur", 0),
-    name: recall("name", ""),
-    engine: recall("engine", "acoustic"),
-    tol: recall("tol", 0.95),
-    ac: recall("ac", null),
-    snd: recall("snd", true),
-    vib: recall("vib", true)
-  };
-
-  /* ---------- counter UI ---------- */
-  var CIRC = 2 * Math.PI * 52;
-  el.bar.style.strokeDasharray = String(CIRC);
-  function renderCount() {
-    var t = S.target, c = S.count;
-    var inRound = ((c % t) + t) % t;
-    var round = Math.floor(c / t);
-    el.count.textContent = String(c);
-    el.bead.textContent = "bead " + inRound + " of " + t + (round > 0 ? " · round " + (round + 1) : "");
-    el.bar.style.strokeDashoffset = String(CIRC * (1 - inRound / t));
-  }
-  function bump(n, fromListener) {
-    S.count = Math.max(0, S.count + n);
-    store("count", S.count);
-    renderCount();
-    if (n > 0) {
-      el.dial.classList.remove("pulse"); void el.dial.offsetWidth; el.dial.classList.add("pulse");
-      var roundDone = S.count % S.target === 0;
-      if (S.snd) tick(roundDone);
-      if (S.vib && navigator.vibrate) { try { navigator.vibrate(roundDone ? [120, 60, 120] : 25); } catch (e) {} }
-    }
-  }
-  el.plus.addEventListener("click", function () { bump(1); });
-  el.minus.addEventListener("click", function () { bump(-1); });
-  var resetArmed = false, resetTimer = null;
-  el.reset.addEventListener("click", function () {
-    if (!resetArmed) {
-      resetArmed = true; el.reset.textContent = "Tap again to reset";
-      resetTimer = setTimeout(function () { resetArmed = false; el.reset.textContent = "Reset"; }, 3000);
-      return;
-    }
-    clearTimeout(resetTimer); resetArmed = false; el.reset.textContent = "Reset";
-    S.count = 0; store("count", 0); renderCount();
-  });
-
-  /* soft tick sound, from its own audio context */
-  var tickCtx = null;
-  function tick(long) {
+  /* ---------- storage ---------- */
+  var DB = { decks: [], cur: null };
+  var CFG = { voice: "", rate: 1, tolScale: 1, tries: 3, wait: 10, shuffle: true, showQ: true };
+  var saveWarned = false;
+  function load() {
     try {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!tickCtx) tickCtx = new AC();
-      if (tickCtx.state === "suspended") tickCtx.resume();
-      var o = tickCtx.createOscillator(), g = tickCtx.createGain();
-      o.type = "sine"; o.frequency.value = long ? 523 : 880;
-      var t0 = tickCtx.currentTime, d = long ? 0.5 : 0.09;
-      g.gain.setValueAtTime(0.0001, t0);
-      g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
-      o.connect(g); g.connect(tickCtx.destination);
-      o.start(t0); o.stop(t0 + d + 0.02);
+      var d = JSON.parse(localStorage.getItem("trainer.db") || "null"); if (d && d.decks) DB = d;
+      var c = JSON.parse(localStorage.getItem("trainer.cfg") || "null"); if (c) for (var k in c) CFG[k] = c[k];
     } catch (e) {}
+    if (!DB.decks.length) { DB.decks.push({ id: uid(), name: "My questions", items: [] }); DB.cur = DB.decks[0].id; }
+    if (!getDeck(DB.cur)) DB.cur = DB.decks[0].id;
   }
-
-  /* ---------- settings ---------- */
-  el.thr.value = S.thr; el.thrVal.textContent = S.thr + "%";
-  el.thr.addEventListener("input", function () {
-    S.thr = parseInt(el.thr.value, 10); el.thrVal.textContent = S.thr + "%"; store("thr", S.thr);
-  });
-  el.tol.value = S.tol; el.tolVal.textContent = Number(S.tol).toFixed(2);
-  el.tol.addEventListener("input", function () {
-    S.tol = parseFloat(el.tol.value); el.tolVal.textContent = S.tol.toFixed(2); store("tol", S.tol);
-  });
-  el.engine.value = S.engine;
-  function applyEngine() {
-    el.acBox.hidden = S.engine !== "acoustic";
-    el.phBox.hidden = S.engine !== "phoneme";
-    el.modelBox.hidden = S.engine !== "phoneme";
-    el.phRef.hidden = S.engine !== "phoneme";
-    updateReady();
-    if (S.engine === "phoneme" && !session) autoLoadIfCached();
+  function save() {
+    try { localStorage.setItem("trainer.db", JSON.stringify(DB)); }
+    catch (e) { if (!saveWarned) { saveWarned = true; setBuild("Could not save: browser storage is full or blocked. Delete some samples or sets."); } }
   }
-  el.engine.addEventListener("change", function () { S.engine = el.engine.value; store("engine", S.engine); applyEngine(); });
-  el.target.value = String(S.target);
-  el.target.addEventListener("change", function () { S.target = parseInt(el.target.value, 10); store("target", S.target); renderCount(); });
-  el.snd.checked = S.snd; el.vib.checked = S.vib;
-  el.snd.addEventListener("change", function () { S.snd = el.snd.checked; store("snd", S.snd); if (S.snd) tick(false); });
-  el.vib.addEventListener("change", function () { S.vib = el.vib.checked; store("vib", S.vib); });
-  el.mname.value = S.name;
-  el.mname.addEventListener("input", function () { S.name = el.mname.value; store("name", S.name); });
+  function saveCfg() { try { localStorage.setItem("trainer.cfg", JSON.stringify(CFG)); } catch (e) {} }
+  function getDeck(id) { for (var i = 0; i < DB.decks.length; i++) if (DB.decks[i].id === id) return DB.decks[i]; return null; }
+  function curDeck() { return getDeck(DB.cur); }
+  function setBuild(t) { el.buildStatus.textContent = t; }
 
-  function setStatus(t) { el.status.textContent = t; }
-  function setMStatus(t) { el.mstatus.textContent = t; }
-
-  /* ---------- reference mantra ---------- */
-  function renderRef() {
-    el.refChips.textContent = "";
-    S.ref.forEach(function (p, i) {
-      var b = document.createElement("button");
-      b.className = "chip secondary"; b.type = "button"; b.textContent = p;
-      b.setAttribute("aria-label", "Remove sound " + p);
-      b.addEventListener("click", function () { S.ref.splice(i, 1); saveRef(); });
-      el.refChips.appendChild(b);
-    });
-    el.refText.value = S.ref.join(" ");
-    var bits = [];
-    if (S.ac) bits.push("sound pattern saved (" + S.ac.dur.toFixed(1) + " s per repetition)");
-    if (S.ref.length) bits.push(S.ref.length + " phonemes saved");
-    el.refInfo.textContent = bits.length ? "Saved: " + bits.join(", ") + "." : "No mantra recorded yet.";
-    updateReady();
-  }
-  function saveRef() { store("ref", S.ref); store("refDur", S.refDur); renderRef(); }
-  el.refText.addEventListener("change", function () {
-    S.ref = el.refText.value.split(/\s+/).filter(Boolean);
-    if (!S.refDur) S.refDur = Math.max(1, S.ref.length * 0.18);
-    saveRef();
-  });
-
-  function engineReady() {
-    return S.engine === "acoustic" ? !!S.ac : (!!session && S.ref.length >= 3);
-  }
-  function updateReady() {
-    el.start.disabled = !engineReady() && !listening;
-    el.recRef.disabled = listening || refRecording;
-    if (!listening && !refRecording) {
-      if (S.engine === "acoustic") {
-        setStatus(S.ac ? "Ready. Tap Start listening and begin chanting." : "Record your mantra once below, then start listening.");
-      } else if (!session) setStatus("Load the speech model below to begin.");
-      else if (S.ref.length < 3) setStatus("Record your mantra once below, then start listening.");
-      else setStatus("Ready. Tap Start listening and begin chanting.");
-    }
-  }
-
-  /* ---------- model loading ---------- */
-  var session = null, idToTok = [];
-  var originOk = /^https?:$/.test(location.protocol) && location.origin !== "null" && window.top === window.self;
-  if (window.ort) {
-    ort.env.wasm.wasmPaths = ORT_BASE;
-    ort.env.wasm.numThreads = self.crossOriginIsolated ? Math.min(4, navigator.hardwareConcurrency || 2) : 1;
-  } else { setMStatus("Could not load the ONNX runtime. Check your connection and reload."); el.load.disabled = true; }
-  if (!originOk) setMStatus("This looks like an in-app preview, which blocks downloads and the microphone. Open this page from an https:// link in Chrome.");
-
-  async function fetchCached(url, onProgress) {
-    var cache = null;
-    try { cache = await caches.open(CACHE); } catch (e) {}
-    if (cache) {
-      var hit = await cache.match(url);
-      if (hit) { onProgress(1, 1, true); return await hit.arrayBuffer(); }
-    }
-    var res = await fetch(url);
-    if (!res.ok) throw new Error("Download failed (" + res.status + ")");
-    var total = parseInt(res.headers.get("content-length") || "0", 10);
-    var reader = res.body.getReader(), parts = [], got = 0;
-    for (;;) {
-      var r = await reader.read();
-      if (r.done) break;
-      parts.push(r.value); got += r.value.length; onProgress(got, total, false);
-    }
-    var buf = new Uint8Array(got), off = 0;
-    for (var i = 0; i < parts.length; i++) { buf.set(parts[i], off); off += parts[i].length; }
-    parts = null;
-    if (cache) { try { await cache.put(url, new Response(buf.buffer.slice(0))); } catch (e) {} }
-    return buf.buffer;
-  }
-
-  el.load.addEventListener("click", async function () {
-    var cfg = PRESETS[el.model.value];
-    el.load.disabled = true; el.prog.hidden = false; el.prog.value = 0;
-    try {
-      setMStatus("Loading vocabulary...");
-      var vocab = null, lastErr = "";
-      for (var vi = 0; vi < cfg.vocab.length && !vocab; vi++) {
-        try {
-          var vres = await fetch(cfg.vocab[vi]);
-          if (!vres.ok) { lastErr = "status " + vres.status; continue; }
-          vocab = await vres.json();
-        } catch (ve) { lastErr = ve.message || String(ve); }
-      }
-      if (!vocab) throw new Error("Vocabulary download failed (" + lastErr + ")");
-      idToTok = [];
-      Object.keys(vocab).forEach(function (t) { idToTok[vocab[t]] = t; });
-      var buf = await fetchCached(cfg.model, function (got, total, cached) {
-        if (cached) { setMStatus("Reading model from local cache..."); el.prog.removeAttribute("value"); return; }
-        if (total) { el.prog.value = got / total; setMStatus("Downloading model: " + Math.round(got / 1048576) + " of " + Math.round(total / 1048576) + " MB"); }
-        else { el.prog.removeAttribute("value"); setMStatus("Downloading model: " + Math.round(got / 1048576) + " MB"); }
-      });
-      setMStatus("Starting the model (this can take a little while)...");
-      el.prog.removeAttribute("value");
-      session = await ort.InferenceSession.create(buf, { executionProviders: ["wasm"], graphOptimizationLevel: "all" });
-      buf = null;
-      setMStatus("Model ready. Everything runs on this device.");
-      updateReady();
-    } catch (e) {
-      session = null;
-      var em = e && e.message ? e.message : String(e);
-      if (!originOk || /fetch/i.test(em)) em += ". Open this page from an https:// link in Chrome.";
-      setMStatus("Could not load: " + em);
-    } finally {
-      el.prog.hidden = true; el.load.disabled = false;
-    }
-  });
-
-  async function autoLoadIfCached() {
-    if (!window.ort || !window.caches) return;
-    try {
-      var cache = await caches.open(CACHE);
-      if (await cache.match(PRESETS.int8.model)) { el.model.value = "int8"; el.load.click(); }
-    } catch (e) {}
-  }
-
-  /* ---------- audio capture at 16 kHz ---------- */
-  var RB = SR * 40, ring = new Float32Array(RB), total = 0;
-  var actx = null, stream = null, proc = null, srcNode = null, sink = null;
-  var recChunks = null;
-  var phase = 0, lastS = 0;
-
-  function pushSamples(arr, n) {
-    var peak = 0, sum = 0;
-    for (var i = 0; i < n; i++) {
-      var v = arr[i];
-      ring[(total + i) % RB] = v;
-      sum += v * v;
-    }
-    if (recChunks) recChunks.push(arr.slice(0, n));
-    total += n;
-    var rms = Math.sqrt(sum / Math.max(1, n));
-    el.level.style.width = Math.min(100, rms * 900) + "%";
-  }
-
-  async function startCapture() {
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 }
-    });
-    var AC = window.AudioContext || window.webkitAudioContext;
-    try { actx = new AC({ sampleRate: SR }); } catch (e) { actx = new AC(); }
-    if (actx.state === "suspended") { try { await actx.resume(); } catch (e) {} }
-    var ratio = actx.sampleRate / SR;
-    phase = 0; lastS = 0;
-    srcNode = actx.createMediaStreamSource(stream);
-    proc = actx.createScriptProcessor(4096, 1, 1);
-    proc.onaudioprocess = function (e) {
-      var inp = e.inputBuffer.getChannelData(0);
-      if (ratio === 1) { pushSamples(inp, inp.length); return; }
-      var out = new Float32Array(Math.ceil(inp.length / ratio) + 2), n = 0;
-      while (phase < inp.length - 1) {
-        var i = Math.floor(phase), f = phase - i;
-        var a = i < 0 ? lastS : inp[i], b = inp[i + 1];
-        out[n++] = a + (b - a) * f;
-        phase += ratio;
-      }
-      phase -= inp.length; lastS = inp[inp.length - 1];
-      pushSamples(out, n);
-    };
-    sink = actx.createGain(); sink.gain.value = 0;
-    srcNode.connect(proc); proc.connect(sink); sink.connect(actx.destination);
-  }
-
-  function stopCapture() {
-    try { if (proc) { proc.onaudioprocess = null; proc.disconnect(); } } catch (e) {}
-    try { if (srcNode) srcNode.disconnect(); } catch (e) {}
-    try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
-    try { if (actx) actx.close(); } catch (e) {}
-    proc = srcNode = stream = actx = sink = null;
-    el.level.style.width = "0%";
-  }
-
-  function lastSamples(n) {
-    n = Math.min(n, total, RB);
-    var out = new Float32Array(n), start = total - n;
-    for (var i = 0; i < n; i++) out[i] = ring[(start + i) % RB];
-    return out;
-  }
-
-  /* ---------- inference ---------- */
-  function half(h) {
-    var s = (h & 0x8000) ? -1 : 1, e = (h >> 10) & 0x1f, f = h & 0x3ff;
-    if (e === 0) return s * Math.pow(2, -14) * (f / 1024);
-    if (e === 31) return f ? NaN : s * Infinity;
-    return s * Math.pow(2, e - 15) * (1 + f / 1024);
-  }
-
-  async function infer(raw) {
-    var d = new Float32Array(raw.length), mean = 0, i;
-    for (i = 0; i < raw.length; i++) mean += raw[i];
-    mean /= raw.length;
-    var v = 0;
-    for (i = 0; i < raw.length; i++) { var x = raw[i] - mean; v += x * x; }
-    var sd = Math.sqrt(v / raw.length + 1e-7);
-    for (i = 0; i < raw.length; i++) d[i] = (raw[i] - mean) / sd;
-    var feeds = {};
-    feeds[session.inputNames[0]] = new ort.Tensor("float32", d, [1, d.length]);
-    var res = await session.run(feeds);
-    var out = res[session.outputNames[0]];
-    var dims = out.dims, V = dims[dims.length - 1], T = dims[dims.length - 2], data = out.data;
-    if (out.type === "float16" || data instanceof Uint16Array) {
-      var f = new Float32Array(data.length);
-      for (i = 0; i < data.length; i++) f[i] = half(data[i]);
-      data = f;
-    }
-    var phones = [], prev = -1;
-    for (var t = 0; t < T; t++) {
-      var best = 0, bv = -Infinity, base = t * V;
-      for (var k = 0; k < V; k++) { var val = data[base + k]; if (val > bv) { bv = val; best = k; } }
-      if (best !== prev) {
-        var tok = idToTok[best];
-        if (tok !== undefined && !SPECIAL[tok]) phones.push({ p: tok, ms: t * 20 });
-      }
-      prev = best;
-    }
-    return phones;
-  }
-
-  /* ---------- fuzzy matching on phoneme sequences ---------- */
-  function baseOf(p) { return p.replace(/[ːˑʰʲʷ̩̯̃]/g, ""); }
-  function subCost(a, b) {
-    if (a === b) return 0;
-    if (baseOf(a) === baseOf(b)) return 0.4;
-    return 1;
-  }
-  /* Returns end indexes (1-based position in seq) of approximate occurrences of ref inside seq, with similarity scores. */
-  function findMatches(ref, seq, thr) {
-    var m = ref.length, n = seq.length;
-    if (m === 0 || n === 0) return [];
-    var prev = new Float32Array(n + 1), cur = new Float32Array(n + 1), i, j;
-    for (i = 1; i <= m; i++) {
-      cur[0] = i;
-      for (j = 1; j <= n; j++) {
-        var a = prev[j - 1] + subCost(ref[i - 1], seq[j - 1]);
-        var b = prev[j] + 1;
-        var c = cur[j - 1] + 1;
-        cur[j] = a < b ? (a < c ? a : c) : (b < c ? b : c);
-      }
-      var tmp = prev; prev = cur; cur = tmp;
-    }
-    var score = new Float32Array(n + 2);
-    for (j = 1; j <= n; j++) score[j] = 1 - prev[j] / m;
-    var peaks = [];
-    for (j = 1; j <= n; j++) {
-      if (score[j] >= thr && score[j] >= score[j - 1] && score[j] > score[j + 1]) peaks.push({ j: j, s: score[j] });
-    }
-    peaks.sort(function (x, y) { return y.s - x.s; });
-    var gap = Math.max(2, Math.round(m * 0.6)), keep = [];
-    peaks.forEach(function (pk) {
-      for (var q = 0; q < keep.length; q++) if (Math.abs(keep[q].j - pk.j) < gap) return;
-      keep.push(pk);
-    });
-    keep.sort(function (x, y) { return x.j - y.j; });
-    return keep;
-  }
-
-
-  /* ---------- fast acoustic matching (log-mel cepstra + subsequence DTW) ---------- */
+  /* ---------- sound features (log-mel cepstra, 20 ms frames) ---------- */
   var FFT_N = 512, WIN = 400, HOP = 320, NMEL = 26, NCEP = 13, DIMS = 12;
   var hamming = new Float32Array(WIN), melFB = [], dct = [], bitrev = new Uint16Array(FFT_N);
   var twRe = new Float32Array(FFT_N / 2), twIm = new Float32Array(FFT_N / 2);
@@ -583,9 +242,7 @@
       dct.push(row);
     }
   })();
-
   var fRe = new Float32Array(FFT_N), fIm = new Float32Array(FFT_N), frameBuf = new Float32Array(WIN), melE = new Float32Array(NMEL);
-  /* frameBuf holds 400 samples; returns Float32Array(13): [logEnergy, c1..c12] */
   function frameFeature() {
     var i, k;
     fRe.fill(0); fIm.fill(0);
@@ -597,17 +254,14 @@
       var half = size >> 1, step = FFT_N / size;
       for (var st = 0; st < FFT_N; st += size) {
         for (k = 0; k < half; k++) {
-          var wr = twRe[k * step], wi = twIm[k * step];
-          var a = st + k, b = a + half;
+          var wr = twRe[k * step], wi = twIm[k * step], a = st + k, b = a + half;
           var tr = fRe[b] * wr - fIm[b] * wi, ti = fRe[b] * wi + fIm[b] * wr;
-          fRe[b] = fRe[a] - tr; fIm[b] = fIm[a] - ti;
-          fRe[a] += tr; fIm[a] += ti;
+          fRe[b] = fRe[a] - tr; fIm[b] = fIm[a] - ti; fRe[a] += tr; fIm[a] += ti;
         }
       }
     }
-    var nb = FFT_N / 2 + 1, pw = new Float32Array(nb);
+    var nb = FFT_N / 2 + 1, pw = new Float32Array(nb), tot = 0;
     for (k = 0; k < nb; k++) pw[k] = fRe[k] * fRe[k] + fIm[k] * fIm[k];
-    var tot = 0;
     for (i = 0; i < NMEL; i++) {
       var e = 0, fb = melFB[i];
       for (k = 0; k < nb; k++) if (fb[k]) e += fb[k] * pw[k];
@@ -615,259 +269,506 @@
     }
     var out = new Float32Array(NCEP);
     out[0] = Math.log(Math.max(tot, 1e-8));
-    for (i = 1; i < NCEP; i++) { var s2 = 0, row = dct[i]; for (var j = 0; j < NMEL; j++) s2 += row[j] * melE[j]; out[i] = s2; }
+    for (i = 1; i < NCEP; i++) { var s2 = 0, row2 = dct[i]; for (var j = 0; j < NMEL; j++) s2 += row2[j] * melE[j]; out[i] = s2; }
     return out;
   }
   function pool(a, b) { var o = new Float32Array(NCEP); for (var i = 0; i < NCEP; i++) o[i] = (a[i] + b[i]) / 2; return o; }
 
-  /* live feature stream, 40 ms per pooled frame */
-  var featNext = 0, pooled = [], pooledBase = 0, pendingFrame = null;
-  function resetFeatureStream() { featNext = Math.floor(total / HOP); pooled = []; pooledBase = Math.floor(featNext / 2); pendingFrame = null; }
-  function pumpFeatures() {
-    while ((featNext + 1) * HOP + (WIN - HOP) <= total && featNext * HOP >= total - RB + WIN) {
-      var start = featNext * HOP;
-      for (var i = 0; i < WIN; i++) frameBuf[i] = ring[(start + i) % RB];
-      var f = frameFeature();
-      if (featNext % 2 === 0) pendingFrame = f;
-      else if (pendingFrame) { pooled.push(pool(pendingFrame, f)); pendingFrame = null; }
-      featNext++;
-    }
-    if (pooled.length > 1500) { pooled.splice(0, 500); pooledBase += 500; }
+  /* ---------- microphone ---------- */
+  var ring = new Float32Array(RB), total = 0, frameNext = 0;
+  var actx = null, stream = null, proc = null, srcNode = null, sink = null, phase = 0, lastS = 0;
+  var micOn = false;
+
+  function pushSamples(arr, n) {
+    var sum = 0, i;
+    for (i = 0; i < n; i++) { ring[(total + i) % RB] = arr[i]; sum += arr[i] * arr[i]; }
+    total += n;
   }
-  function featuresFromWav(wav) {
-    var out = [], prev = null, nf = Math.floor((wav.length - WIN) / HOP) + 1;
-    for (var k = 0; k < nf; k++) {
-      for (var i = 0; i < WIN; i++) frameBuf[i] = wav[k * HOP + i];
-      var f = frameFeature();
-      if (k % 2 === 0) prev = f; else out.push(pool(prev, f));
+  async function startMic() {
+    if (micOn) return;
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 }
+    });
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { actx = new AC({ sampleRate: SR }); } catch (e) { actx = new AC(); }
+    if (actx.state === "suspended") { try { await actx.resume(); } catch (e) {} }
+    var ratio = actx.sampleRate / SR;
+    phase = 0; lastS = 0;
+    srcNode = actx.createMediaStreamSource(stream);
+    proc = actx.createScriptProcessor(4096, 1, 1);
+    proc.onaudioprocess = function (e) {
+      var inp = e.inputBuffer.getChannelData(0);
+      if (ratio === 1) { pushSamples(inp, inp.length); return; }
+      var out = new Float32Array(Math.ceil(inp.length / ratio) + 2), n = 0;
+      while (phase < inp.length - 1) {
+        var i = Math.floor(phase), f = phase - i;
+        var a = i < 0 ? lastS : inp[i], b = inp[i + 1];
+        out[n++] = a + (b - a) * f; phase += ratio;
+      }
+      phase -= inp.length; lastS = inp[inp.length - 1];
+      pushSamples(out, n);
+    };
+    sink = actx.createGain(); sink.gain.value = 0;
+    srcNode.connect(proc); proc.connect(sink); sink.connect(actx.destination);
+    micOn = true;
+  }
+  function stopMic() {
+    try { if (proc) { proc.onaudioprocess = null; proc.disconnect(); } } catch (e) {}
+    try { if (srcNode) srcNode.disconnect(); } catch (e) {}
+    try { if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    try { if (actx) actx.close(); } catch (e) {}
+    proc = srcNode = stream = actx = sink = null; micOn = false;
+    setLevel(0);
+  }
+  function micError(e) {
+    return "Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone.";
+  }
+  function pullFrames() {
+    var out = [], i, minStart = Math.max(0, total - RB + WIN);
+    if (frameNext * HOP < minStart) frameNext = Math.ceil(minStart / HOP);
+    while (frameNext * HOP + WIN <= total) {
+      var st = frameNext * HOP;
+      for (i = 0; i < WIN; i++) frameBuf[i] = ring[(st + i) % RB];
+      out.push(frameFeature()); frameNext++;
     }
     return out;
   }
-  function buildAcousticRef(wav) {
-    var fr = featuresFromWav(wav);
-    if (fr.length < 15) return null;
-    var mn = Infinity, mx = -Infinity, i, d;
-    fr.forEach(function (f) { if (f[0] < mn) mn = f[0]; if (f[0] > mx) mx = f[0]; });
-    var thr = mn + 0.35 * (mx - mn), a = 0, b = fr.length - 1;
-    while (a < fr.length && fr[a][0] < thr) a++;
-    while (b > a && fr[b][0] < thr) b--;
-    a = Math.max(0, a - 1); b = Math.min(fr.length - 1, b + 1);
-    var seg = fr.slice(a, b + 1);
-    if (seg.length < 10) return null;
+  function setLevel(v) {
+    var w = Math.max(0, Math.min(100, v * 100)) + "%";
+    el.level.style.width = w; el.level2.style.width = w;
+  }
+
+  /* ---------- speech detection ---------- */
+  var ON = 2.4, OFF = 1.8, END_QUIET = 30;
+  var floorE = null;
+  function makeEndpointer(floor) {
+    var s = { floor: floor, inSpeech: false, hot: 0, quiet: 0, speech: 0, pre: [], frames: [], done: false, ok: false, maxFrames: 400 };
+    s.push = function (f) {
+      if (s.done) return;
+      var e = f[0];
+      if (!s.inSpeech) {
+        s.pre.push(f); if (s.pre.length > 15) s.pre.shift();
+        if (e > s.floor + ON) {
+          s.hot++;
+          if (s.hot >= 3) { s.inSpeech = true; s.frames = s.pre.slice(); s.speech = s.hot; s.quiet = 0; }
+        } else { s.hot = 0; if (e < s.floor + 1.0) s.floor = s.floor * 0.98 + e * 0.02; }
+      } else {
+        s.frames.push(f);
+        if (e > s.floor + OFF) { s.quiet = 0; s.speech++; } else s.quiet++;
+        if (s.quiet >= END_QUIET || s.frames.length >= s.maxFrames) {
+          if (s.quiet > 4) s.frames.length -= (s.quiet - 4);
+          s.done = true; s.ok = s.speech >= 10;
+        }
+      }
+    };
+    return s;
+  }
+  async function calibrate() {
+    frameNext = Math.ceil(total / HOP);
+    var es = [], t0 = performance.now();
+    while (performance.now() - t0 < 450) {
+      await sleep(30);
+      pullFrames().forEach(function (f) { es.push(f[0]); });
+    }
+    if (es.length < 5) { floorE = floorE === null ? -5 : floorE; return; }
+    es.sort(function (a, b) { return a - b; });
+    floorE = es[Math.floor(es.length * 0.3)];
+  }
+  var abortListen = false;
+  /* resolves { frames, floor } on speech, { timeout:true }, or { cancelled:true } */
+  async function listenOnce(timeoutMs) {
+    abortListen = false;
+    frameNext = Math.ceil(total / HOP);
+    var ep = makeEndpointer(floorE), t0 = performance.now();
+    while (!abortListen) {
+      await sleep(30);
+      var nf = pullFrames();
+      for (var i = 0; i < nf.length; i++) {
+        ep.push(nf[i]);
+        setLevel((nf[i][0] - ep.floor) / 7);
+        if (ep.done) break;
+      }
+      if (ep.done) { floorE = ep.floor; setLevel(0); return ep.ok ? { frames: ep.frames, floor: ep.floor } : { tooShort: true }; }
+      if (!ep.inSpeech && performance.now() - t0 > timeoutMs) { floorE = ep.floor; setLevel(0); return { timeout: true }; }
+    }
+    setLevel(0);
+    return { cancelled: true };
+  }
+
+  function prepareUtterance(frames, floor) {
+    var a = 0, b = frames.length - 1, i, d;
+    while (a < frames.length && frames[a][0] < floor + 1.8) a++;
+    while (b > a && frames[b][0] < floor + 1.8) b--;
+    a = Math.max(0, a - 2); b = Math.min(frames.length - 1, b + 2);
+    var seg = frames.slice(a, b + 1);
+    if (seg.length < 8) return null;
+    var pf = [];
+    for (i = 0; i + 1 < seg.length; i += 2) pf.push(pool(seg[i], seg[i + 1]));
+    if (pf.length < 5) return null;
     var mean = new Array(DIMS).fill(0), sd = new Array(DIMS).fill(0);
-    seg.forEach(function (f) { for (d = 0; d < DIMS; d++) mean[d] += f[d + 1]; });
-    for (d = 0; d < DIMS; d++) mean[d] /= seg.length;
-    seg.forEach(function (f) { for (d = 0; d < DIMS; d++) { var x = f[d + 1] - mean[d]; sd[d] += x * x; } });
-    for (d = 0; d < DIMS; d++) sd[d] = Math.sqrt(sd[d] / seg.length) + 1e-3;
-    var norm = seg.map(function (f) { var r = []; for (var d2 = 0; d2 < DIMS; d2++) r.push(Math.round(((f[d2 + 1] - mean[d2]) / sd[d2]) * 1000) / 1000); return r; });
-    return { f: norm, mean: mean, sd: sd, dur: seg.length * 0.04 };
+    pf.forEach(function (f) { for (d = 0; d < DIMS; d++) mean[d] += f[d + 1]; });
+    for (d = 0; d < DIMS; d++) mean[d] /= pf.length;
+    pf.forEach(function (f) { for (d = 0; d < DIMS; d++) { var x = f[d + 1] - mean[d]; sd[d] += x * x; } });
+    for (d = 0; d < DIMS; d++) sd[d] = Math.sqrt(sd[d] / pf.length) + 1e-3;
+    var norm = pf.map(function (f) { var r = []; for (var q = 0; q < DIMS; q++) r.push(Math.round(((f[q + 1] - mean[q]) / sd[q]) * 100) / 100); return r; });
+    return { f: norm, dur: pf.length * 0.04 };
   }
 
-  /* open-begin, open-end DTW of the reference against a stretch of live frames */
-  function subseqDTW(R, X, pen) {
-    var m = R.length, n = X.length, j, i, d;
-    var Dp = new Float32Array(n), Lp = new Float32Array(n), Sp = new Int32Array(n);
-    var Dc = new Float32Array(n), Lc = new Float32Array(n), Sc = new Int32Array(n);
+  /* ---------- comparing two utterances (dynamic time warping) ---------- */
+  function dtwFull(A, B) {
+    var n = A.length, m = B.length, i, j, pen = 0.1;
+    if (!n || !m) return 9;
+    var Dp = new Float32Array(m), Lp = new Float32Array(m), Dc = new Float32Array(m), Lc = new Float32Array(m);
     function dist(r, x) { var s2 = 0; for (var q = 0; q < DIMS; q++) { var t = r[q] - x[q]; s2 += t * t; } return Math.sqrt(s2 / DIMS); }
-    for (j = 0; j < n; j++) { Dp[j] = dist(R[0], X[j]); Lp[j] = 1; Sp[j] = j; }
-    for (i = 1; i < m; i++) {
-      for (j = 0; j < n; j++) {
-        d = dist(R[i], X[j]);
-        var bd = Dp[j] + d + pen, bl = Lp[j] + 1, bs = Sp[j];
-        if (j > 0) {
-          var dg = Dp[j - 1] + d;
-          if (dg < bd) { bd = dg; bl = Lp[j - 1] + 1; bs = Sp[j - 1]; }
-          var hz = Dc[j - 1] + d + pen;
-          if (hz < bd) { bd = hz; bl = Lc[j - 1] + 1; bs = Sc[j - 1]; }
-        }
-        Dc[j] = bd; Lc[j] = bl; Sc[j] = bs;
+    Dp[0] = dist(A[0], B[0]); Lp[0] = 1;
+    for (j = 1; j < m; j++) { Dp[j] = Dp[j - 1] + dist(A[0], B[j]) + pen; Lp[j] = Lp[j - 1] + 1; }
+    for (i = 1; i < n; i++) {
+      Dc[0] = Dp[0] + dist(A[i], B[0]) + pen; Lc[0] = Lp[0] + 1;
+      for (j = 1; j < m; j++) {
+        var d = dist(A[i], B[j]);
+        var bd = Dp[j - 1] + d, bl = Lp[j - 1] + 1;
+        var v = Dp[j] + d + pen; if (v < bd) { bd = v; bl = Lp[j] + 1; }
+        var h = Dc[j - 1] + d + pen; if (h < bd) { bd = h; bl = Lc[j - 1] + 1; }
+        Dc[j] = bd; Lc[j] = bl;
       }
-      var t1 = Dp; Dp = Dc; Dc = t1; t1 = Lp; Lp = Lc; Lc = t1; var t2 = Sp; Sp = Sc; Sc = t2;
+      var t1 = Dp; Dp = Dc; Dc = t1; t1 = Lp; Lp = Lc; Lc = t1;
     }
-    var cost = new Float32Array(n), start = new Int32Array(n);
-    for (j = 0; j < n; j++) { cost[j] = Dp[j] / Lp[j]; start[j] = Sp[j]; }
-    return { cost: cost, start: start };
+    return Dp[m - 1] / Lp[m - 1] + 0.3 * Math.abs(Math.log(n / m));
   }
 
-  var acLastPrint = 0;
-  function acousticStep() {
-    pumpFeatures();
-    var R = S.ac.f, m = R.length;
-    var absEnd = pooledBase + pooled.length;
-    var winFrames = Math.min(pooled.length, Math.round(m * 2.6) + 20);
-    if (winFrames < m + 5) return;
-    var winStartIdx = pooled.length - winFrames, X = new Array(winFrames), i, d;
-    var mean = S.ac.mean, sd = S.ac.sd;
-    for (i = 0; i < winFrames; i++) {
-      var f = pooled[winStartIdx + i], r = new Array(DIMS);
-      for (d = 0; d < DIMS; d++) r[d] = (f[d + 1] - mean[d]) / sd[d];
-      X[i] = r;
+  var DEFAULT_TOL = 0.9;
+  function itemTol(item) {
+    var s = item.samples;
+    if (s.length < 2) return DEFAULT_TOL;
+    var worst = 0;
+    for (var i = 0; i < s.length; i++) {
+      var best = 9;
+      for (var j = 0; j < s.length; j++) if (i !== j) best = Math.min(best, dtwFull(s[i].f, s[j].f));
+      worst = Math.max(worst, best);
     }
-    var rawN = Math.min(total, Math.round(winFrames * 0.04 * SR)), ssum = 0, base = total - rawN;
-    for (i = 0; i < rawN; i += 8) { var v = ring[(base + i) % RB]; ssum += v * v; }
-    var rms = Math.sqrt(ssum / Math.max(1, rawN / 8));
-    if (rms < SILENCE_RMS) { el.heard.textContent = "(quiet)"; return; }
-
-    var res = subseqDTW(R, X, 0.12), cost = res.cost, start = res.start, n = cost.length;
-    var lo = Math.floor(m * 0.55), hi = Math.ceil(m * 1.8), cands = [], best = 9, j;
-    for (j = 0; j < n; j++) {
-      var dur = j - start[j] + 1;
-      if (dur < lo || dur > hi) continue;
-      if (cost[j] < best) best = cost[j];
-      var l = j > 0 ? cost[j - 1] : 9, rr = j < n - 1 ? cost[j + 1] : 9;
-      if (cost[j] <= S.tol && cost[j] <= l && cost[j] < rr) cands.push({ j: j, c: cost[j] });
-    }
-    cands.sort(function (a, b) { return a.c - b.c; });
-    var gap = Math.max(3, Math.round(m * 0.6)), keep = [];
-    cands.forEach(function (c) {
-      for (var q = 0; q < keep.length; q++) if (Math.abs(keep[q].j - c.j) < gap) return;
-      keep.push(c);
+    return Math.max(0.7, Math.min(1.3, worst * 1.5));
+  }
+  function evaluate(item, deck, utt) {
+    var own = 9, other = Infinity;
+    item.samples.forEach(function (s) { own = Math.min(own, dtwFull(utt.f, s.f)); });
+    deck.items.forEach(function (o) {
+      if (o === item) return;
+      o.samples.forEach(function (s) { other = Math.min(other, dtwFull(utt.f, s.f)); });
     });
-    var added = 0, speechDur = Math.max(0.6, S.ac.dur);
-    keep.forEach(function (c) {
-      var t = (pooledBase + winStartIdx + c.j) * 0.04;
-      for (var k = 0; k < counted.length; k++) if (Math.abs(counted[k] - t) < speechDur * 0.6) return;
-      counted.push(t); added++;
-    });
-    if (counted.length > 60) counted = counted.slice(-30);
-    if (added) bump(added, true);
-    el.heard.textContent = "closest match " + (best < 9 ? best.toFixed(2) : "none") + " (counts when below " + S.tol.toFixed(2) + ")";
+    var tol = itemTol(item) * CFG.tolScale;
+    var ok = own <= tol && (other === Infinity || own <= other * 0.97);
+    return { ok: ok, own: own, other: other, tol: tol };
   }
 
-  async function acousticLoop() {
-    while (listening && S.engine === "acoustic") {
-      try { acousticStep(); } catch (e) { setStatus("Listening error: " + (e && e.message ? e.message : e)); }
-      await sleep(250);
-    }
+  /* ---------- sounds and speech ---------- */
+  var beepCtx = null;
+  function beepCtxGet() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!beepCtx) beepCtx = new AC();
+    if (beepCtx.state === "suspended") beepCtx.resume();
+    return beepCtx;
   }
-
-  /* ---------- record the reference mantra ---------- */
-  var refRecording = false, refTimer = null;
-  el.recRef.addEventListener("click", async function () {
-    if (refRecording) { finishRef(); return; }
-    if (S.engine === "phoneme" && !session) { setStatus("Load the speech model first."); return; }
-    try { await startCapture(); }
-    catch (e) { setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone."); return; }
-    recChunks = []; refRecording = true;
-    el.recRef.textContent = "Stop"; el.recRef.classList.add("rec");
-    el.start.disabled = true;
-    setStatus("Say the mantra once, then tap Stop.");
-    refTimer = setTimeout(finishRef, 15000);
-  });
-
-  async function finishRef() {
-    clearTimeout(refTimer);
-    if (!refRecording) return;
-    refRecording = false;
-    var chunks = recChunks; recChunks = null;
-    stopCapture();
-    el.recRef.textContent = "Record the mantra once"; el.recRef.classList.remove("rec");
-    var len = 0; chunks.forEach(function (c) { len += c.length; });
-    var wav = new Float32Array(len), off = 0;
-    chunks.forEach(function (c) { wav.set(c, off); off += c.length; });
-    if (len < SR * 0.8) { setStatus("That was too short. Try again."); updateReady(); return; }
-    el.recRef.disabled = true;
-    setStatus("Working out how your mantra sounds...");
-    await new Promise(function (r) { setTimeout(r, 30); });
+  function note(c, type, freq, t0, dur, gain) {
+    var o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  async function beep(ok) {
     try {
-      var ac = buildAcousticRef(wav);
-      if (!ac) { setStatus("No clear speech heard. Move closer to the microphone and try again."); el.recRef.disabled = false; updateReady(); return; }
-      S.ac = ac; store("ac", ac);
-      var msg = "Mantra saved. Tap Start listening when ready.";
-      if (session) {
-        var ph = await infer(wav);
-        if (ph.length >= 3) {
-          S.ref = ph.map(function (x) { return x.p; });
-          S.refDur = Math.max(0.8, (ph[ph.length - 1].ms - ph[0].ms) / 1000 + 0.25);
-          store("ref", S.ref); store("refDur", S.refDur);
-        }
-      }
-      renderRef();
-      setStatus(msg);
-    } catch (e) { setStatus("Could not process the recording: " + (e && e.message ? e.message : e)); }
-    el.recRef.disabled = false;
-    updateReady();
+      var c = beepCtxGet(), t = c.currentTime + 0.02;
+      if (ok) { note(c, "sine", 660, t, 0.14, 0.25); note(c, "sine", 990, t + 0.15, 0.22, 0.25); }
+      else { note(c, "sawtooth", 170, t, 0.45, 0.16); }
+      if (navigator.vibrate) { try { navigator.vibrate(ok ? 40 : [80, 40, 80]); } catch (e) {} }
+    } catch (e) {}
+    await sleep(ok ? 450 : 600);
   }
-
-  /* ---------- live listening ---------- */
-  var listening = false, counted = [], wakeLock = null;
-
-  async function holdScreen() {
-    try { if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen"); } catch (e) {}
+  var voices = [];
+  function loadVoices() {
+    if (!window.speechSynthesis) return;
+    voices = speechSynthesis.getVoices();
+    el.voice.textContent = "";
+    var def = document.createElement("option"); def.value = ""; def.textContent = "Phone default"; el.voice.appendChild(def);
+    voices.forEach(function (v) {
+      var o = document.createElement("option"); o.value = v.voiceURI; o.textContent = v.name + " (" + v.lang + ")"; el.voice.appendChild(o);
+    });
+    el.voice.value = CFG.voice || "";
   }
-  function releaseScreen() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
-  document.addEventListener("visibilitychange", function () { if (listening && document.visibilityState === "visible") holdScreen(); });
-
-  el.start.addEventListener("click", async function () {
-    if (listening) { stopListening(); return; }
-    if (!engineReady()) return;
-    try { await startCapture(); }
-    catch (e) { setStatus("Microphone unavailable: " + (e && e.message ? e.message : e) + ". Open this page from an https:// link in Chrome and allow the microphone."); return; }
-    listening = true; counted = [];
-    el.start.textContent = "Stop listening"; el.start.classList.add("rec");
-    el.state.textContent = "Listening"; el.state.classList.add("on");
-    el.recRef.disabled = true; el.load.disabled = true; el.engine.disabled = true;
-    el.heard.textContent = "";
-    setStatus("Chant at your usual pace. Counts appear a moment after each repetition.");
-    tick(false);
-    holdScreen();
-    if (S.engine === "acoustic") { resetFeatureStream(); acousticLoop(); } else liveLoop();
-  });
-
-  function stopListening() {
-    listening = false;
-    stopCapture(); releaseScreen();
-    el.start.textContent = "Start listening"; el.start.classList.remove("rec");
-    el.state.textContent = "Not listening"; el.state.classList.remove("on");
-    el.load.disabled = false; el.engine.disabled = false;
-    updateReady();
+  function speak(text) {
+    return new Promise(function (res) {
+      if (!window.speechSynthesis || !text) { res(); return; }
+      try { speechSynthesis.cancel(); } catch (e) {}
+      var u = new SpeechSynthesisUtterance(text), done = false, tm;
+      var v = null;
+      for (var i = 0; i < voices.length; i++) if (voices[i].voiceURI === CFG.voice) v = voices[i];
+      if (v) { u.voice = v; u.lang = v.lang; }
+      u.rate = CFG.rate;
+      function fin() { if (done) return; done = true; clearTimeout(tm); res(); }
+      u.onend = fin; u.onerror = fin;
+      tm = setTimeout(fin, 4000 + text.length * 150);
+      speechSynthesis.speak(u);
+    });
   }
+  function stopSpeech() { try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} }
 
-  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-
-  async function liveLoop() {
-    var lastRun = 0;
-    while (listening) {
-      var refDur = S.refDur || 2;
-      var winSec = Math.min(12, Math.max(5, refDur * 2.2 + 1));
-      var needNew = Math.max(0.8, refDur * 0.5) * SR;
-      if (total < refDur * SR * 1.1 || total - lastRun < needNew) { await sleep(150); continue; }
-      lastRun = total;
-      var raw = lastSamples(Math.round(winSec * SR));
-      var winEnd = total / SR, winStart = winEnd - raw.length / SR;
-      var tail = raw.subarray(Math.max(0, raw.length - SR * 2)), s2 = 0, i;
-      for (i = 0; i < tail.length; i++) s2 += tail[i] * tail[i];
-      var rmsAll = 0; for (i = 0; i < raw.length; i++) rmsAll += raw[i] * raw[i];
-      rmsAll = Math.sqrt(rmsAll / raw.length);
-      if (rmsAll < SILENCE_RMS) { el.heard.textContent = "(quiet)"; await sleep(200); continue; }
-      var t0 = performance.now(), phones;
-      try { phones = await infer(raw); }
-      catch (e) { setStatus("Listening error: " + (e && e.message ? e.message : e)); await sleep(500); continue; }
-      if (!listening) break;
-      var took = (performance.now() - t0) / 1000;
-      var seq = phones.map(function (x) { return x.p; });
-      el.heard.textContent = seq.slice(-30).join(" ");
-      var found = findMatches(S.ref, seq, S.thr / 100);
-      var speechDur = Math.max(0.6, refDur - 0.25), added = 0;
-      found.forEach(function (m) {
-        var t = winStart + phones[m.j - 1].ms / 1000;
-        for (var k = 0; k < counted.length; k++) if (Math.abs(counted[k] - t) < speechDur * 0.6) return;
-        counted.push(t); added++;
+  /* ---------- Build tab ---------- */
+  var busy = false;
+  function renderDecks() {
+    [el.deckSel, el.quizSel].forEach(function (sel) {
+      sel.textContent = "";
+      DB.decks.forEach(function (d) {
+        var o = document.createElement("option"); o.value = d.id; o.textContent = d.name + " (" + d.items.length + ")"; sel.appendChild(o);
       });
-      if (counted.length > 60) counted = counted.slice(-30);
-      if (added) bump(added, true);
-      if (took > winSec * 0.6) setStatus("This phone takes " + took.toFixed(1) + " s per pass, so counts may lag a little.");
-      else setStatus("Listening. Last pass took " + took.toFixed(1) + " s.");
-      await sleep(20);
+      sel.value = DB.cur;
+    });
+    el.deckName.value = curDeck().name;
+  }
+  function renderItems() {
+    var deck = curDeck();
+    el.items.textContent = "";
+    if (!deck.items.length) {
+      var p = document.createElement("div"); p.className = "note"; p.textContent = "No questions yet. Add one above.";
+      el.items.appendChild(p); return;
+    }
+    deck.items.forEach(function (item, idx) {
+      var card = document.createElement("div"); card.className = "item";
+      var q = document.createElement("input"); q.type = "text"; q.value = item.q; q.setAttribute("aria-label", "Question " + (idx + 1));
+      q.addEventListener("change", function () { item.q = q.value; save(); });
+      var a = document.createElement("input"); a.type = "text"; a.value = item.a; a.setAttribute("aria-label", "Written answer " + (idx + 1));
+      a.addEventListener("change", function () { item.a = a.value; save(); });
+      var meta = document.createElement("div"); meta.className = "meta";
+      var n = item.samples.length;
+      meta.innerHTML = "";
+      var b1 = document.createElement("b"); b1.textContent = String(n);
+      meta.appendChild(b1);
+      meta.appendChild(document.createTextNode(n === 1 ? " recording" : " recordings"));
+      if (n < 3) {
+        var w = document.createElement("span"); w.className = "warnText";
+        w.textContent = n === 0 ? " . Record at least 3." : " . Record " + (3 - n) + " more for best results.";
+        meta.appendChild(w);
+      }
+      var row = document.createElement("div"); row.className = "row";
+      var rec = document.createElement("button"); rec.textContent = "Record answer"; rec.type = "button";
+      rec.addEventListener("click", function () { recordSample(item, rec); });
+      var hear = document.createElement("button"); hear.className = "secondary"; hear.textContent = "Hear question"; hear.type = "button";
+      hear.addEventListener("click", function () { speak(item.q); });
+      var undo = document.createElement("button"); undo.className = "secondary"; undo.textContent = "Remove last recording"; undo.type = "button";
+      undo.disabled = n === 0;
+      undo.addEventListener("click", function () { item.samples.pop(); save(); renderItems(); });
+      var del = document.createElement("button"); del.className = "danger"; del.textContent = "Delete question"; del.type = "button";
+      var armed = false, tmr = null;
+      del.addEventListener("click", function () {
+        if (!armed) { armed = true; del.textContent = "Tap again to delete"; tmr = setTimeout(function () { armed = false; del.textContent = "Delete question"; }, 3000); return; }
+        clearTimeout(tmr); deck.items.splice(idx, 1); save(); renderDecks(); renderItems();
+      });
+      row.appendChild(rec); row.appendChild(hear); row.appendChild(undo); row.appendChild(del);
+      card.appendChild(q); card.appendChild(a); card.appendChild(meta); card.appendChild(row);
+      el.items.appendChild(card);
+    });
+  }
+
+  async function recordSample(item, btn) {
+    if (busy) return;
+    busy = true; btn.disabled = true;
+    try {
+      setBuild("Starting the microphone...");
+      try { await startMic(); } catch (e) { setBuild(micError(e)); return; }
+      setBuild("Stay quiet for a moment...");
+      await calibrate();
+      btn.textContent = "Listening...";
+      setBuild("Say the answer now. Recording stops by itself when you finish.");
+      var res = await listenOnce(10000);
+      if (res.timeout) { setBuild("Did not hear anything. Move closer and try again."); return; }
+      if (res.tooShort || !res.frames) { setBuild("That was too short. Try again."); return; }
+      var utt = prepareUtterance(res.frames, res.floor);
+      if (!utt) { setBuild("That was too short. Try again."); return; }
+      item.samples.push({ f: utt.f, dur: utt.dur });
+      save();
+      setBuild("Saved recording " + item.samples.length + " (" + utt.dur.toFixed(1) + " s).");
+    } finally {
+      stopMic(); busy = false; renderItems();
     }
   }
 
-  /* expose pure helpers for testing outside the browser */
-  if (typeof window !== "undefined") window.__mantra = { findMatches: findMatches };
+  el.deckSel.addEventListener("change", function () { DB.cur = el.deckSel.value; save(); renderDecks(); renderItems(); });
+  el.quizSel.addEventListener("change", function () { DB.cur = el.quizSel.value; save(); renderDecks(); renderItems(); });
+  el.deckNew.addEventListener("click", function () {
+    var name = el.deckName.value.trim() || "New set";
+    var d = { id: uid(), name: name, items: [] }; DB.decks.push(d); DB.cur = d.id; save(); renderDecks(); renderItems();
+  });
+  el.deckRename.addEventListener("click", function () {
+    var name = el.deckName.value.trim(); if (!name) return;
+    curDeck().name = name; save(); renderDecks();
+  });
+  var delArmed = false, delTimer = null;
+  el.deckDel.addEventListener("click", function () {
+    if (!delArmed) { delArmed = true; el.deckDel.textContent = "Tap again to delete"; delTimer = setTimeout(function () { delArmed = false; el.deckDel.textContent = "Delete set"; }, 3000); return; }
+    clearTimeout(delTimer); delArmed = false; el.deckDel.textContent = "Delete set";
+    DB.decks = DB.decks.filter(function (d) { return d.id !== DB.cur; });
+    if (!DB.decks.length) DB.decks.push({ id: uid(), name: "My questions", items: [] });
+    DB.cur = DB.decks[0].id; save(); renderDecks(); renderItems();
+  });
+  el.addItem.addEventListener("click", function () {
+    var q = el.newQ.value.trim(), a = el.newA.value.trim();
+    if (!q) { setBuild("Type the question first."); el.newQ.focus(); return; }
+    curDeck().items.push({ id: uid(), q: q, a: a, samples: [] });
+    el.newQ.value = ""; el.newA.value = ""; save(); renderDecks(); renderItems();
+    setBuild("Question added. Tap Record answer on it to teach your voice.");
+  });
 
-  renderCount();
-  renderRef();
-  applyEngine();
+  /* ---------- tabs ---------- */
+  function showTab(name) {
+    var build = name === "build";
+    el.buildPane.hidden = !build; el.quizPane.hidden = build;
+    el.buildPane.style.display = build ? "grid" : "none"; el.quizPane.style.display = build ? "none" : "grid";
+    el.tabBuild.setAttribute("aria-selected", String(build)); el.tabQuiz.setAttribute("aria-selected", String(!build));
+  }
+  el.tabBuild.addEventListener("click", function () { if (!quizActive) showTab("build"); });
+  el.tabQuiz.addEventListener("click", function () { showTab("quiz"); });
+
+  /* ---------- settings ---------- */
+  function tolWord(v) { return v < 0.9 ? "strict" : v > 1.1 ? "forgiving" : "normal"; }
+  el.rate.value = CFG.rate; el.rateVal.textContent = Number(CFG.rate).toFixed(2);
+  el.tolScale.value = CFG.tolScale; el.tolVal.textContent = tolWord(CFG.tolScale);
+  el.tries.value = String(CFG.tries); el.wait.value = String(CFG.wait);
+  el.shuffle.checked = CFG.shuffle; el.showQ.checked = CFG.showQ;
+  el.rate.addEventListener("input", function () { CFG.rate = parseFloat(el.rate.value); el.rateVal.textContent = CFG.rate.toFixed(2); saveCfg(); });
+  el.tolScale.addEventListener("input", function () { CFG.tolScale = parseFloat(el.tolScale.value); el.tolVal.textContent = tolWord(CFG.tolScale); saveCfg(); });
+  el.tries.addEventListener("change", function () { CFG.tries = parseInt(el.tries.value, 10); saveCfg(); });
+  el.wait.addEventListener("change", function () { CFG.wait = parseInt(el.wait.value, 10); saveCfg(); });
+  el.shuffle.addEventListener("change", function () { CFG.shuffle = el.shuffle.checked; saveCfg(); });
+  el.showQ.addEventListener("change", function () { CFG.showQ = el.showQ.checked; saveCfg(); });
+  el.voice.addEventListener("change", function () { CFG.voice = el.voice.value; saveCfg(); speak("Ready"); });
+  if (window.speechSynthesis) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+
+  /* ---------- Quiz ---------- */
+  var quizActive = false, quizToken = 0, skipReq = false, repeatReq = false;
+
+  function setPhase(t) { el.qPhase.textContent = t; }
+  function setBadge(kind) { el.qBadge.textContent = kind === "ok" ? "✓" : kind === "no" ? "✗" : ""; el.qBadge.className = "badge" + (kind ? " " + kind : ""); }
+
+  el.qSkip.addEventListener("click", function () { skipReq = true; abortListen = true; stopSpeech(); });
+  el.qRepeat.addEventListener("click", function () { repeatReq = true; abortListen = true; stopSpeech(); });
+  el.qHear.addEventListener("click", function () { if (curQ) { abortListen = true; hearReq = true; stopSpeech(); } });
+  var hearReq = false, curQ = null;
+
+  el.qStart.addEventListener("click", function () {
+    if (quizActive) { stopQuiz(); return; }
+    runQuiz();
+  });
+
+  function stopQuiz() {
+    quizToken++; quizActive = false; abortListen = true; stopSpeech(); stopMic();
+    el.qStart.textContent = "Start quiz"; el.qStart.classList.remove("rec"); el.quizSel.disabled = false;
+    el.qCard.hidden = true;
+  }
+
+  function shuffleArr(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+  async function runQuiz() {
+    var deck = curDeck();
+    var ready = deck.items.filter(function (it) { return it.samples.length > 0; });
+    var skipped = deck.items.length - ready.length;
+    el.summary.hidden = true;
+    if (!ready.length) {
+      el.summary.hidden = false; el.summary.textContent = "Nothing to ask yet. Record at least one answer for a question on the Build tab.";
+      return;
+    }
+    var token = ++quizToken;
+    quizActive = true; el.qStart.textContent = "Stop quiz"; el.qStart.classList.add("rec"); el.quizSel.disabled = true;
+    el.qCard.hidden = false; setBadge(""); el.qDetail.textContent = "";
+    beepCtxGet();
+    setPhase("Starting the microphone...");
+    el.qNum.textContent = ""; el.qText.textContent = "";
+    try { await startMic(); }
+    catch (e) { setPhase(micError(e)); quizActive = false; el.qStart.textContent = "Start quiz"; el.qStart.classList.remove("rec"); el.quizSel.disabled = false; return; }
+    setPhase("Stay quiet for a moment...");
+    await calibrate();
+
+    var order = ready.slice(); if (CFG.shuffle) shuffleArr(order);
+    var firstTry = 0, missed = [], i;
+    for (i = 0; i < order.length && token === quizToken; i++) {
+      var item = order[i], tries = 0, solved = false, first = true;
+      curQ = item;
+      el.qNum.textContent = "Question " + (i + 1) + " of " + order.length;
+      el.qText.textContent = CFG.showQ ? item.q : "(listening only)";
+      setBadge(""); el.qDetail.textContent = "";
+      while (token === quizToken && !solved) {
+        skipReq = false; repeatReq = false; hearReq = false;
+        setPhase("Listen to the question...");
+        await speak(item.q);
+        if (token !== quizToken) break;
+        if (skipReq) break;
+        if (hearReq) { setPhase("The answer is: " + (item.a || "(no written answer)")); await speak(item.a); continue; }
+        if (repeatReq) continue;
+        await sleep(450);
+        setPhase("Your turn. Say the answer.");
+        var res = await listenOnce(CFG.wait * 1000);
+        if (token !== quizToken) break;
+        if (res.cancelled) {
+          if (skipReq) break;
+          if (hearReq) { setPhase("The answer is: " + (item.a || "(no written answer)")); await speak(item.a); }
+          continue;
+        }
+        var verdict = null;
+        if (res.frames) {
+          var utt = prepareUtterance(res.frames, res.floor);
+          if (utt) verdict = evaluate(item, curDeck(), utt);
+        }
+        if (verdict && verdict.ok) {
+          setBadge("ok"); setPhase("Correct");
+          el.qDetail.textContent = "match " + verdict.own.toFixed(2) + " (needs under " + verdict.tol.toFixed(2) + ")";
+          await beep(true); solved = true;
+          if (first) firstTry++;
+        } else {
+          tries++; first = false;
+          setBadge("no");
+          if (!res.frames) setPhase(res.timeout ? "No answer heard" : "That was too short");
+          else setPhase("Not quite");
+          if (verdict) el.qDetail.textContent = "match " + verdict.own.toFixed(2) + " (needs under " + verdict.tol.toFixed(2) + ")" + (verdict.other < Infinity ? ", nearest other answer " + verdict.other.toFixed(2) : "");
+          else el.qDetail.textContent = "";
+          await beep(false);
+          if (tries >= CFG.tries) {
+            setPhase("The answer is: " + (item.a || "(no written answer)"));
+            await speak(item.a);
+            missed.push(item); break;
+          }
+          await sleep(300);
+        }
+      }
+      if (skipReq && !solved) missed.push(item);
+      if (solved) await sleep(300);
+    }
+    curQ = null;
+    if (token !== quizToken) return;
+    stopQuiz();
+    showSummary(order.length, firstTry, missed, skipped);
+  }
+
+  function showSummary(n, firstTry, missed, skipped) {
+    el.summary.hidden = false; el.summary.textContent = "";
+    var h = document.createElement("h2"); h.textContent = "Done: " + firstTry + " of " + n + " right on the first try";
+    el.summary.appendChild(h);
+    if (missed.length) {
+      var p = document.createElement("div"); p.className = "note"; p.textContent = "To practise again:"; el.summary.appendChild(p);
+      var ul = document.createElement("ul");
+      missed.forEach(function (it) { var li = document.createElement("li"); li.textContent = it.q + (it.a ? " (" + it.a + ")" : ""); ul.appendChild(li); });
+      el.summary.appendChild(ul);
+    }
+    if (skipped) {
+      var s = document.createElement("div"); s.className = "note"; s.textContent = skipped + " question(s) were left out because they have no recorded answer."; el.summary.appendChild(s);
+    }
+  }
+
+  window.addEventListener("pagehide", function () { stopSpeech(); });
+
+  load();
+  renderDecks();
+  renderItems();
+  showTab("build");
+  window.__trainer = { prepareUtterance: prepareUtterance, dtwFull: dtwFull, makeEndpointer: makeEndpointer, frameFeature: frameFeature, frameBuf: frameBuf };
 })();
 </script>
 </body>
